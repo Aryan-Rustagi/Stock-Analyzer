@@ -1,11 +1,11 @@
 //Login
-import React, { useState } from 'react';
-import {UseState, UseEffect} from 'react';
-
+import { useState } from "react";
 function Login(){
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    function handleemailchange(event){
+    const [error, setError] = useState("");
+    const [message, setMessage]=useState("");
+    function handleEmailChange(event){
         setEmail(event.target.value);
     }
 
@@ -16,10 +16,27 @@ function Login(){
 
     function handleSubmit(event){
         event.preventDefault();
-        console.log(email);
-console.log(password);
-        
+        if(email===""){
+            setError("Please enter the email");
+        }
+        else if(password===""){
+            setError("Please enter the password");
+        }
+       else{
+        setError("");
+
+        console.log(email,password);
+       }
+
+       if(email!=="" && password!=="")
+       {
+        setMessage("Login Successful");
+       }
+       else{
+        setMessage("");
+       }
     }
+    
     
     return(
         <div>
@@ -31,7 +48,7 @@ console.log(password);
             type="email"
             placeholder="Enter your email"
             value={email}
-            onChange={handleemailchange}
+            onChange={handleEmailChange}
             />
 
         <br />
@@ -50,6 +67,8 @@ console.log(password);
         <button>Login</button>
 
         </form>
+        <p>{error}</p>
+        <p>{message}</p>
 
         </div>
     )
