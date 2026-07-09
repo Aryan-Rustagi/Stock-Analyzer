@@ -1,24 +1,16 @@
-const express=require ('express');
+const express= require('express');
 const cors=require('cors');
+
 const app=express();
 
-const PORT =process.env.PORT|| 5000;
+const PORT=5000;
 
 app.use(cors());
 
-app.use(express.json());
-
-app.get('/',(req,res)=>{
-    res.send("Hello this is the starting of our code");
+app.get("/",function(req,res){
+    res.send("Welcome to the server ");
 });
 
-app.get('/user',(req,res)=>{
-    res.json({
-        "name": 'aryan',
-        "age": 20,
-    });
-});
-
-app.listen(PORT,()=>{
-    console.log(`Server is running on ${PORT}`);
+app.listen(PORT,function(){
+    console.log("Server is running ");
 });
