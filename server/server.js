@@ -1,30 +1,26 @@
-const express= require('express');
-const cors=require('cors');
-const dotenv=require('dotenv');
-const connectDb=require('./config/db.js')
-
-dotenv.config();
-
+const express=require('express');
 const app=express();
 
-const PORT=process.env.PORT || 5000;
+const cors=require('cors');
+
+const dotenv=require('dotenv');
+
+const connectDb=require('./config/db');
+
+const PORT =process.env.PORT;
+
+dotenv.config();
+ connectDb();
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/",function(req,res){
-    res.send("Welcome to the server ");
+app.get('/',function(req,res){
+   res.send("Welcome to the stock analyzer");
 });
 
-async function startServer(){
-    await connectDb();
-
-    app.listen(PORT,function(){
-        console.log(`Server is running on port ${PORT}`);
-    });
-}
-
-startServer().catch(function(error){
-    console.log("Server failed to start:", error.message);
-    process.exit(1);
+app.listen(PORT,function(){
+    console.log("Server is running ");
 });
+
+
