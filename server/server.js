@@ -7,10 +7,13 @@ const dotenv=require('dotenv');
 
 const connectDb=require('./config/db');
 
-const PORT =process.env.PORT;
-
 dotenv.config();
- connectDb();
+
+const PORT = process.env.PORT || 5000;
+
+connectDb().catch((error) => {
+    console.error('Database initialization skipped:', error.message);
+});
 
 app.use(cors());
 app.use(express.json());

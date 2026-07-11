@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 function Login(){
+    const navigate=useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -8,34 +11,40 @@ function Login(){
     function handleEmailChange(event){
         setEmail(event.target.value);
     }
-
-
     function handlePasswordChange(event){
         setPassword(event.target.value);
-    }
+    }   
 
-    function handleSubmit(event){
-        event.preventDefault();
-        if(email===""){
-            setError("Please enter the email");
+
+   async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (email === '') {
+        setError('Please enter the email');
+        setMessage('');
+    } else if (password === '') {
+        setError('Please enter the password');
+        setMessage('');
+    } else {
+        setError('');
+        setMessage('');
+
+        try {
+            const response = await axios.post('http://localhost:5000/api/auth/login', {
+                email: email,
+                password: password
+            });
+
+            localStorage.setItem('token', response.data.token);
+            alert('Login successful!');
+            navigate('/dashboard');
         }
-        else if(password===""){
-            setError("Please enter the password");
+        catch(err) {
+            setError(err.response?.data?.message || 'Login failed');
+            setMessage('');
         }
-       else{
-        setError("");
-
-        console.log(email,password);
-       }
-
-       if(email!=="" && password!=="")
-       {
-        setMessage("Login Successful");
-       }
-       else{
-        setMessage("");
-       }
     }
+}
     
     
     return(

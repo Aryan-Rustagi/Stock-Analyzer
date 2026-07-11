@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function SignUp() {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +28,7 @@ function SignUp() {
     setConfirmPassword(event.target.value);
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (name === '') {
@@ -45,11 +48,21 @@ function SignUp() {
       setMessage('');
     } else {
       setError('');
-      setMessage('Sign Up Successful!');
-      setName('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
+
+      try{
+        const response = await axios.post('http://localhost:5000/api/auth/register',{
+          name: name,
+          email: email,
+          password: password
+        });
+        localStorage.setItem('token', response.data.token);
+        alert('Registration successful!');
+        navigate('/dashboard');
+
+      }
+      catch(err){
+        setError(err.response?.data?.message || 'Registration failed');
+      }
     }
   }
 
