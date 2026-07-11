@@ -67,8 +67,8 @@ function SignUp() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <div className="auth-container">
+      <div className="auth-card glass-panel animate-in">
         <div className="auth-intro">
           <p className="eyebrow">Create account</p>
           <h1>Begin your investment journey</h1>
@@ -76,43 +76,55 @@ function SignUp() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <label htmlFor="signup-name">Full name</label>
-          <input
-            id="signup-name"
+          <div className="form-group">
+            <label htmlFor="signup-name" className="form-label">Full name</label>
+            <input
+              id="signup-name"
+              className="glow-input"
             type="text"
             placeholder="Enter your name"
             value={name}
-            onChange={handleNameChange}
-          />
+              onChange={handleNameChange}
+            />
+          </div>
 
-          <label htmlFor="signup-email">Email address</label>
-          <input
-            id="signup-email"
+          <div className="form-group">
+            <label htmlFor="signup-email" className="form-label">Email address</label>
+            <input
+              id="signup-email"
+              className="glow-input"
             type="email"
             placeholder="Enter your email"
             value={email}
-            onChange={handleEmailChange}
-          />
+              onChange={handleEmailChange}
+            />
+          </div>
 
-          <label htmlFor="signup-password">Password</label>
-          <input
-            id="signup-password"
+          <div className="form-group">
+            <label htmlFor="signup-password" className="form-label">Password</label>
+            <input
+              id="signup-password"
+              className="glow-input"
             type="password"
             placeholder="Enter your password"
             value={password}
-            onChange={handlePasswordChange}
-          />
+              onChange={handlePasswordChange}
+            />
+          </div>
 
-          <label htmlFor="signup-confirm">Confirm password</label>
-          <input
-            id="signup-confirm"
+          <div className="form-group">
+            <label htmlFor="signup-confirm" className="form-label">Confirm password</label>
+            <input
+              id="signup-confirm"
+              className="glow-input"
             type="password"
             placeholder="Re-enter your password"
             value={confirmPassword}
-            onChange={handleConfirmPasswordChange}
-          />
+              onChange={handleConfirmPasswordChange}
+            />
+          </div>
 
-          <button type="submit">Create account</button>
+          <button type="submit" className="btn-glow" style={{width: "100%", marginTop: "1rem"}}>Create account</button>
         </form>
 
         {error && <p className="auth-error">{error}</p>}

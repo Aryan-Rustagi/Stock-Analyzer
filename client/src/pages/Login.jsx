@@ -49,8 +49,8 @@ function Login() {
     }
 
     return (
-        <div className="auth-page">
-            <div className="auth-card">
+        <div className="auth-container">
+            <div className="auth-card glass-panel animate-in">
                 <div className="auth-intro">
                     <p className="eyebrow">Welcome back</p>
                     <h1>Login to your account</h1>
@@ -58,25 +58,31 @@ function Login() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="auth-form">
-                    <label htmlFor="login-email">Email address</label>
-                    <input
-                        id="login-email"
+                    <div className="form-group">
+                        <label htmlFor="login-email" className="form-label">Email address</label>
+                        <input
+                            id="login-email"
+                            className="glow-input"
                         type="email"
                         placeholder="Enter your email"
                         value={email}
                         onChange={handleEmailChange}
-                    />
+                        />
+                    </div>
 
-                    <label htmlFor="login-password">Password</label>
-                    <input
-                        id="login-password"
+                    <div className="form-group">
+                        <label htmlFor="login-password" className="form-label">Password</label>
+                        <input
+                            id="login-password"
+                            className="glow-input"
                         type="password"
                         placeholder="Enter your password"
                         value={password}
                         onChange={handlePasswordChange}
-                    />
+                        />
+                    </div>
 
-                    <button type="submit">Login</button>
+                    <button type="submit" className="btn-glow" style={{width: "100%", marginTop: "1rem"}}>Login</button>
                 </form>
 
                 {error && <p className="auth-error">{error}</p>}
