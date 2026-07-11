@@ -2,91 +2,92 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
-function Login(){
-    const navigate=useNavigate();
+
+function Login() {
+    const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-    const [message, setMessage]=useState("");
-    function handleEmailChange(event){
+    const [message, setMessage] = useState("");
+
+    function handleEmailChange(event) {
         setEmail(event.target.value);
     }
-    function handlePasswordChange(event){
+
+    function handlePasswordChange(event) {
         setPassword(event.target.value);
-    }   
+    }
 
+    async function handleSubmit(event) {
+        event.preventDefault();
 
-   async function handleSubmit(event) {
-    event.preventDefault();
-
-    if (email === '') {
-        setError('Please enter the email');
-        setMessage('');
-    } else if (password === '') {
-        setError('Please enter the password');
-        setMessage('');
-    } else {
-        setError('');
-        setMessage('');
-
-        try {
-            const response = await axios.post('http://localhost:5000/api/auth/login', {
-                email: email,
-                password: password
-            });
-
-            localStorage.setItem('token', response.data.token);
-            alert('Login successful!');
-            navigate('/dashboard');
-        }
-        catch(err) {
-            setError(err.response?.data?.message || 'Login failed');
+        if (email === '') {
+            setError('Please enter the email');
             setMessage('');
+        } else if (password === '') {
+            setError('Please enter the password');
+            setMessage('');
+        } else {
+            setError('');
+            setMessage('');
+
+            try {
+                const response = await axios.post('http://localhost:5000/api/auth/login', {
+                    email: email,
+                    password: password
+                });
+
+                localStorage.setItem('token', response.data.token);
+                alert('Login successful!');
+                navigate('/dashboard');
+            }
+            catch(err) {
+                setError(err.response?.data?.message || 'Login failed');
+                setMessage('');
+            }
         }
     }
-}
-    
-    
-    return(
-        <div>
 
-        <h1>Login</h1>
-        <form onSubmit={handleSubmit}>
-            <label>Email</label>
-            <input 
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={handleEmailChange}
-            />
+    return (
+        <div className="auth-page">
+            <div className="auth-card">
+                <div className="auth-intro">
+                    <p className="eyebrow">Welcome back</p>
+                    <h1>Login to your account</h1>
+                    <p>Continue your investment journey with Stock Analyzer.</p>
+                </div>
 
-        <br />
-        <br />
-            <label>Password</label>
-            <input 
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={handlePasswordChange}
-            />
+                <form onSubmit={handleSubmit} className="auth-form">
+                    <label htmlFor="login-email">Email address</label>
+                    <input
+                        id="login-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={handleEmailChange}
+                    />
 
-            <br/>
-             <br/>
+                    <label htmlFor="login-password">Password</label>
+                    <input
+                        id="login-password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={handlePasswordChange}
+                    />
 
-        <button>Login</button>
+                    <button type="submit">Login</button>
+                </form>
 
-        </form>
-        {/* Conditional Rendering */}
+                {error && <p className="auth-error">{error}</p>}
+                {message && <p className="auth-success">{message}</p>}
 
-        {error && <p>{error}</p>}  
-        {message && <p>{message}</p>}
-
-        <Link to="/signup">
-        <h6>Don't have an account? Sign-Up</h6>
-        </Link>
-
+                <p className="auth-link">
+                    Don't have an account? <Link to="/signup">Sign Up</Link>
+                </p>
+            </div>
         </div>
-    )
+    );
 }
 
-export default Login
+export default Login;

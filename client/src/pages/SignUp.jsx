@@ -49,18 +49,18 @@ function SignUp() {
     } else {
       setError('');
 
-      try{
-        const response = await axios.post('http://localhost:5000/api/auth/register',{
+      try {
+        const response = await axios.post('http://localhost:5000/api/auth/register', {
           name: name,
           email: email,
           password: password
         });
+
         localStorage.setItem('token', response.data.token);
         alert('Registration successful!');
         navigate('/dashboard');
-
       }
-      catch(err){
+      catch(err) {
         setError(err.response?.data?.message || 'Registration failed');
       }
     }
