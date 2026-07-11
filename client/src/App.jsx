@@ -3,6 +3,8 @@ import Login from './pages/Login'
 import SignUp from './pages/SignUp'
 import About from './components/About'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
+import SearchStock from './pages/SearchStock'
 
 function App() {
   return (
@@ -11,6 +13,8 @@ function App() {
         <Route path='/' element={<LandingPage />} />
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<SignUp />} />
+        <Route path='/dashboard' element={<Dashboard/>}/>
+        <Route path='/searchstock' element={<SearchStock/>}/>
         <Route path='/about' element={<About />} />
       </Routes>
     </BrowserRouter>
