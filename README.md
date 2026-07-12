@@ -8,6 +8,9 @@
 
 An enterprise-grade, high-performance financial tracking dashboard built utilizing the decoupled MERN stack. Designed with a frosted glassmorphism interface, Stock Analyzer allows investors to monitor real-time stock quotes, visualize chronological price trends, manage customized watchlists, and query real-time market data securely.
 
+* **Live Deployment:** [https://stock-analyzer-henna.vercel.app/](https://stock-analyzer-henna.vercel.app/)
+* **API Server Endpoint:** [https://stock-analyzer-api-n9mz.onrender.com](https://stock-analyzer-api-n9mz.onrender.com)
+
 ---
 
 ## System Architecture & Workflow
