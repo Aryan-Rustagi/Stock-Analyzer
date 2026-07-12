@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 function Hero() {
+    const isLoggedIn = !!localStorage.getItem('token');
     return (
         <div className="hero-section">
 
@@ -22,12 +23,20 @@ function Hero() {
             </p>
 
             <div className="hero-buttons">
-                <Link to="/signup">
-                    <button className="btn-glow">Get Started</button>
-                </Link>
-                <Link to="/login">
-                    <button className="btn-glow btn-glass">Login</button>
-                </Link>
+                {isLoggedIn ? (
+                    <Link to="/dashboard">
+                        <button className="btn-glow">Go to Dashboard</button>
+                    </Link>
+                ) : (
+                    <>
+                        <Link to="/signup">
+                            <button className="btn-glow">Get Started</button>
+                        </Link>
+                        <Link to="/login">
+                            <button className="btn-glow btn-glass">Login</button>
+                        </Link>
+                    </>
+                )}
             </div>
         </div>
     );
