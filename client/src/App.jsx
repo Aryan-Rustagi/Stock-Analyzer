@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import SearchStock from './pages/SearchStock'
 import ProtectedRoute from './components/ProtectedRoute'
+import Portfolio from './pages/Portfolio'
+
 import './App.css'
 
 function App() {
@@ -18,6 +20,7 @@ function App() {
           </div>
           <div className="navbar-links">
             <Link to="/dashboard">Dashboard</Link>
+            <Link to="/portfolio">Portfolio</Link>
             <Link to="/searchstock">Search</Link>
             <Link to="/login" className="btn-glow">Login</Link>
           </div>
@@ -31,6 +34,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path='/dashboard' element={<Dashboard/>}/>
               <Route path='/searchstock' element={<SearchStock/>}/>
+              <Route path='/portfolio' element={<Portfolio/>}/>
             </Route>
           </Routes>
         </main>

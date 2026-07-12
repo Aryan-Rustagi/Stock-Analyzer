@@ -1,23 +1,36 @@
-import React from 'react';
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
-function Hero(){
-    return(
-        <div style={{textAlign: "center", padding: "4rem 0"}}>
-            <h1 className="hero-header">Market Insights, <br/> Redefined.</h1>
+function Hero() {
+    return (
+        <div className="hero-section">
+
+            <div className="hero-particles">
+                <div className="hero-particle"></div>
+                <div className="hero-particle"></div>
+                <div className="hero-particle"></div>
+                <div className="hero-particle"></div>
+                <div className="hero-particle"></div>
+                <div className="hero-particle"></div>
+            </div>
+
+
+            <div className="hero-badge">✦ Real-time Market Data</div>
+
+            <h1 className="hero-header">Market Insights, <br />Redefined.</h1>
             <p className="hero-subtitle">
                 Explore live stock market data, search your favorite companies, and manage your investments—all in one premium, lightning-fast platform.
             </p>
 
-            <div style={{display: "flex", gap: "1rem", justifyContent: "center"}}>
+            <div className="hero-buttons">
                 <Link to="/signup">
-                    <button className="btn-glow" style={{padding: "1rem 2.5rem", fontSize: "1.1rem"}}>Get Started</button>
+                    <button className="btn-glow">Get Started</button>
                 </Link>
                 <Link to="/login">
-                    <button className="btn-glow btn-glass" style={{padding: "1rem 2.5rem", fontSize: "1.1rem"}}>Login</button>
+                    <button className="btn-glow btn-glass">Login</button>
                 </Link>
             </div>
         </div>
-    )
+    );
 }
-export default Hero
+
+export default Hero;
