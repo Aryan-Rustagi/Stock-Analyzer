@@ -79,7 +79,7 @@ function SearchStock() {
             setHistoryData(res.data);
             setShowChart(true);
         } catch(err) {
-            setError('Failed to load chart data');
+            setError('Chart Error: ' + (err.response?.data?.message || err.message));
         }
     }
 
