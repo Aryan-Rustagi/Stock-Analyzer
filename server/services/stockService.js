@@ -19,7 +19,7 @@ async function searchStock(symbol) {
             volume: result.regularMarketVolume
         };
     } catch (error) {
-        throw new Error("Unable to fetch stock information.");
+        throw new Error(error.message || "Unable to fetch stock information.");
     }
 }
 
@@ -34,7 +34,7 @@ async function suggestStock(query) {
             };
         });
     } catch (error) {
-        throw new Error("Unable to fetch stock suggestions.");
+        throw new Error(error.message || "Unable to fetch stock suggestions.");
     }
 }
 
@@ -57,7 +57,7 @@ async function fetchHistoricalData(symbol) {
             };
         });
     } catch(error) {
-        throw new Error("Unable to fetch historical data.");
+        throw new Error(error.message || "Unable to fetch historical data.");
     }
 }
 
