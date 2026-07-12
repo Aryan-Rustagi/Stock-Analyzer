@@ -16,7 +16,7 @@ function Portfolio() {
         setLoading(true);
         try {
             const response = await axios.get(
-                'http://localhost:5000/api/portfolio',
+                'https://stock-analyzer-api-n9mz.onrender.com/api/portfolio',
                 { headers: { Authorization: 'Bearer ' + token } }
             );
             setStock(response.data);
@@ -41,7 +41,7 @@ function Portfolio() {
         }
 
         try {
-            const res = await axios.get('http://localhost:5000/api/stock/suggestions/search?q=' + newSymbol, {
+            const res = await axios.get('https://stock-analyzer-api-n9mz.onrender.com/api/stock/suggestions/search?q='+ newSymbol, {
                 headers: { Authorization: 'Bearer ' + token }
             });
             setSuggestions(res.data);
@@ -82,7 +82,7 @@ function Portfolio() {
 
         try {
             await axios.post(
-                'http://localhost:5000/api/portfolio/add',
+                'https://stock-analyzer-api-n9mz.onrender.com/api/portfolio/add',
                 { symbol: symbol.toUpperCase() },
                 { headers: { Authorization: 'Bearer ' + token } }
             );
@@ -100,7 +100,7 @@ function Portfolio() {
     async function handleRemove(id) {
         try {
             await axios.delete(
-                'http://localhost:5000/api/portfolio/' + id,
+                'https://stock-analyzer-api-n9mz.onrender.com/api/portfolio/' + id,
                 { headers: { Authorization: 'Bearer ' + token } }
             );
             

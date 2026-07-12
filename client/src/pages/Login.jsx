@@ -32,7 +32,7 @@ function Login() {
             setMessage('');
 
             try {
-                const response = await axios.post('http://localhost:5000/api/auth/login', {
+                const response = await axios.post('https://stock-analyzer-api-n9mz.onrender.com/api/auth/login', {
                     email: email,
                     password: password
                 });

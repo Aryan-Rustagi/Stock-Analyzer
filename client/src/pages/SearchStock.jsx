@@ -19,7 +19,7 @@ function SearchStock() {
             }
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/stock/suggestions/search?q=' + symbol, {
+                const res = await axios.get('https://stock-analyzer-api-n9mz.onrender.com/api/stock/suggestions/search?q=' + symbol, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setSuggestions(res.data);
@@ -49,7 +49,7 @@ function SearchStock() {
     async function executeSearch(searchSymbol) {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:5000/api/stock/' + searchSymbol, {
+            const res = await axios.get('https://stock-analyzer-api-n9mz.onrender.com/api/stock/'+ searchSymbol, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStockData(res.data);
@@ -73,7 +73,7 @@ function SearchStock() {
     async function loadChart() {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:5000/api/stock/' + symbol + '/history', {
+            const res = await axios.get('https://stock-analyzer-api-n9mz.onrender.com/api/stock/' + symbol + '/history', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setHistoryData(res.data);

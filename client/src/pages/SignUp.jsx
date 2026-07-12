@@ -50,7 +50,7 @@ function SignUp() {
       setError('');
 
       try {
-        const response = await axios.post('http://localhost:5000/api/auth/register', {
+        const response = await axios.post('https://stock-analyzer-api-n9mz.onrender.com/api/auth/register', {
           name: name,
           email: email,
           password: password
