@@ -25,7 +25,8 @@ async function register(req, res) {
         });
     }
     catch(error) {
-        res.status(500).json({ message: 'Server error' });
+        console.error(error);
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 }
 
@@ -51,7 +52,8 @@ async function login(req, res) {
         });
     }
     catch(error) {
-        res.status(500).json({ message: 'Server error' });
+        console.error(error);
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 }
 
