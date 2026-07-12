@@ -20,10 +20,10 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
 [ API Gateway & Routing (Express + Cors) ]
            │             ▲
            ▼             │ Mongoose ODM
-[ Business Logic & Security (BcryptJS / Yahoo Finance Service) ]
+[ Business Logic & Security (BcryptJS / Finnhub & Yahoo Services) ]
            │             │
            ▼             ▼
-  [ MongoDB Atlas ]   [ Yahoo Finance API ]
+  [ MongoDB Atlas ]   [ Finnhub & Yahoo APIs ]
 ```
 
 1. **Authentication Flow:** Users register or log in. Server-side verification validates user credentials securely. Sessions are authorized via JSON Web Tokens, which are cached client-side.
@@ -52,7 +52,8 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
 | **CORS** | Cross-Origin Middleware | Controls client access domains; restricts and regulates traffic from authorized local hosts. |
 | **BcryptJS** | Cryptographic Hashing | Secures passwords using salted one-way hashing algorithms prior to database storage. |
 | **Recharts** | Interactive Visualization | Renders dynamic SVG charts representing historical stock values, including customizable tooltip cards. |
-| **Yahoo-Finance2** | Financial API Adapter | Integrates external market indicators into backend services, performing secure symbol queries and history pulls. |
+| **Finnhub API** | Real-time Quote Engine | Serves autocomplete search suggestions and real-time market quotes using lightweight REST endpoints. |
+| **Yahoo Chart API**| Historical Data | Serves monthly chart metrics directly via public REST endpoints without cookie restrictions. |
 
 ---
 
@@ -94,6 +95,7 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
    PORT=5000
    MONGO_URI=your_mongodb_connection_string
    JWT_SECRET=your_jwt_secret_signing_key
+   FINNHUB_API_KEY=your_finnhub_api_token
    ```
 4. Start the backend development server:
    ```bash
@@ -142,7 +144,7 @@ Building this financial analyzer provided key insights into advanced full-stack 
 * Engineered secure route guards on the React client to restrict access to unauthorized user dashboards.
 
 ### 4. Enterprise-Grade API Design
-* Integrated Yahoo-Finance API fetches strictly on the backend to prevent API key exposure and reduce client-side bandwidth.
+* Integrated Finnhub API fetches strictly on the backend to protect credentials and bypass cloud host restrictions (like Render IP blocking).
 * Optimized network traffic in search inputs by managing suggestion fetches and handling autocomplete events.
 
 ### 5. Architectural Cleanliness & Refactoring
