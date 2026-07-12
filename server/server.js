@@ -18,7 +18,7 @@ app.use('/api/stock', stockRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 
 app.get('/', function(req, res) {
-    res.send("Welcome to the stock analyzer");
+    res.send("Welcome to the stock analyzer - v1.0.3");
 });
 
 async function startServer() {

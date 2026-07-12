@@ -49,7 +49,7 @@ async function suggestStock(query) {
 
 async function fetchHistoricalData(symbol) {
     try {
-        const res = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/' + symbol + '?range=1mo&interval=1d').then(function(r) { return r.json(); });
+        const res = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/' + symbol + '?range=1mo&interval=1d').then(function(r) { return r.json(); });
         
         if (!res || !res.chart || !res.chart.result || !res.chart.result[0]) {
             throw new Error("No historical data found");
