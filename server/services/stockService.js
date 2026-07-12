@@ -2,27 +2,28 @@ const token = process.env.FINNHUB_API_KEY;
 
 async function searchStock(symbol) {
     try {
-        const [quoteRes, profileRes] = await Promise.all([
-            fetch('https://finnhub.io/api/v1/quote?symbol=' + symbol + '&token=' + token).then(function(r) { return r.json(); }),
-            fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + symbol + '&token=' + token).then(function(r) { return r.json(); })
-        ]);
+        const res = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/' + symbol + '?range=1d&interval=1d').then(function(r) { return r.json(); });
 
-        if (!quoteRes || quoteRes.c === undefined || quoteRes.c === null || quoteRes.c === 0) {
+        if (!res || !res.chart || !res.chart.result || !res.chart.result[0] || !res.chart.result[0].meta) {
             throw new Error("Symbol not found");
         }
 
+        const meta = res.chart.result[0].meta;
+        const quote = res.chart.result[0].indicators.quote[0];
+        const openPrice = (quote && quote.open && quote.open[0]) ? quote.open[0] : meta.regularMarketPrice;
+
         return {
-            symbol: symbol.toUpperCase(),
-            companyName: profileRes.name || symbol.toUpperCase(),
-            currentPrice: quoteRes.c,
-            currency: profileRes.currency || 'USD',
-            exchange: profileRes.exchange || 'US Exchanges',
+            symbol: meta.symbol || symbol.toUpperCase(),
+            companyName: meta.longName || meta.shortName || symbol.toUpperCase(),
+            currentPrice: meta.regularMarketPrice,
+            currency: meta.currency || 'USD',
+            exchange: meta.fullExchangeName || meta.exchangeName || 'Unknown Exchange',
             marketState: 'ACTIVE',
-            previousClose: quoteRes.pc,
-            open: quoteRes.o,
-            high: quoteRes.h,
-            low: quoteRes.l,
-            volume: 0
+            previousClose: meta.chartPreviousClose,
+            open: openPrice,
+            high: meta.regularMarketDayHigh || meta.regularMarketPrice,
+            low: meta.regularMarketDayLow || meta.regularMarketPrice,
+            volume: meta.regularMarketVolume || 0
         };
     } catch (error) {
         throw new Error(error.message || "Unable to fetch stock information.");
