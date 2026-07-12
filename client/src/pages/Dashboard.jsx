@@ -19,7 +19,7 @@ function Dashboard() {
 
 
             <div className="dashboard-cards">
-                <Link to="/searchstock" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <Link to="/searchstock" style={{ textDecoration: 'none', color: 'inherit', display: 'block', width: '100%' }}>
                     <div className="glass-panel dashboard-card">
                         <div className="dashboard-card-icon">🔍</div>
                         <h3>Search Stocks</h3>
@@ -27,7 +27,7 @@ function Dashboard() {
                     </div>
                 </Link>
 
-                <Link to="/portfolio" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <Link to="/portfolio" style={{ textDecoration: 'none', color: 'inherit', display: 'block', width: '100%' }}>
                     <div className="glass-panel dashboard-card">
                         <div className="dashboard-card-icon">📊</div>
                         <h3>My Portfolio</h3>
