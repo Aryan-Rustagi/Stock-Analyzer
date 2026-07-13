@@ -58,6 +58,14 @@
   padding: 0.4rem 1rem;
 }
 
+.mobile-menu-icon {
+  display: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--text);
+  user-select: none;
+}
+
 /* ====== Footer ====== */
 
 .footer {
@@ -620,10 +628,26 @@
 @media (max-width: 768px) {
   .navbar {
     padding: 0 1rem;
-    height: 48px;
+    height: 56px;
+  }
+  .mobile-menu-icon {
+    display: block;
   }
   .navbar-links {
-    gap: 1rem;
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 56px;
+    left: 0;
+    width: 100%;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+  .navbar-links.active {
+    display: flex;
   }
   .main-content {
     padding: 2rem 1rem;

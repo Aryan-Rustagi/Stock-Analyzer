@@ -87,7 +87,7 @@ function SearchStock() {
         <div className="fade-in">
             <div className="page-header">
                 <h1>Search</h1>
-                <p>Look up any stock to view live market data.</p>
+                <p>Look up any stock to view live market data. <strong>Note: Only US stock data is available.</strong></p>
             </div>
 
             <div className="search-wrapper">
