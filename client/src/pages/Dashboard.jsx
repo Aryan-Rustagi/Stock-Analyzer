@@ -1,44 +1,44 @@
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Dashboard() {
     var navigate = useNavigate();
 
     function handleLogout() {
         localStorage.removeItem('token');
-        alert("Logged out successfully");
         navigate('/');
+        window.location.reload();
     }
 
-
     return (
-        <div className="animate-in">
-
+        <div className="fade-in">
             <div className="dashboard-greeting">
-                <p>Welcome back to your Stock Analyzer dashboard.</p>
+                <h1>Dashboard</h1>
+                <p>What would you like to do today?</p>
             </div>
 
-
             <div className="dashboard-cards">
-                <Link to="/searchstock" style={{ textDecoration: 'none', color: 'inherit', display: 'block', width: '100%' }}>
-                    <div className="glass-panel dashboard-card">
-                        <div className="dashboard-card-icon">🔍</div>
+                <Link to="/searchstock" className="dashboard-card">
+                    <div className="dashboard-card-icon">↗</div>
+                    <div>
                         <h3>Search Stocks</h3>
-                        <p>Look up any stock by symbol or company name. Get real-time prices, market data, and historical charts.</p>
+                        <p>Look up any stock by symbol. Get real-time prices, market data, and historical charts.</p>
                     </div>
                 </Link>
 
-                <Link to="/portfolio" style={{ textDecoration: 'none', color: 'inherit', display: 'block', width: '100%' }}>
-                    <div className="glass-panel dashboard-card">
-                        <div className="dashboard-card-icon">📊</div>
+                <Link to="/portfolio" className="dashboard-card">
+                    <div className="dashboard-card-icon">◉</div>
+                    <div>
                         <h3>My Portfolio</h3>
-                        <p>Track your favorite stocks in one place. Add, remove, and monitor live prices for your investments.</p>
+                        <p>Track your saved stocks in one place. Monitor live prices across your holdings.</p>
                     </div>
                 </Link>
 
-                <div className="glass-panel dashboard-card" onClick={handleLogout} style={{ cursor: 'pointer' }}>
-                    <div className="dashboard-card-icon">🚪</div>
-                    <h3>Logout</h3>
-                    <p>Sign out of your account securely. Your portfolio will be saved for when you return.</p>
+                <div className="dashboard-card" onClick={handleLogout}>
+                    <div className="dashboard-card-icon">→</div>
+                    <div>
+                        <h3>Sign Out</h3>
+                        <p>Log out of your account. Your portfolio will be saved.</p>
+                    </div>
                 </div>
             </div>
         </div>

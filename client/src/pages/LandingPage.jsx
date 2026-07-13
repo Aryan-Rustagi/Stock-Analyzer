@@ -3,11 +3,9 @@ import Hero from '../components/Hero';
 
 function LandingPage() {
     return (
-        <div className="animate-in">
+        <div className="fade-in">
             <Hero />
-            <div style={{marginTop: "5rem"}}>
-                <About />
-            </div>
+            <About />
         </div>
     )
 }
