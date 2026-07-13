@@ -4,36 +4,24 @@ function Hero() {
     const isLoggedIn = !!localStorage.getItem('token');
     return (
         <div className="hero-section">
-
-            <div className="hero-particles">
-                <div className="hero-particle"></div>
-                <div className="hero-particle"></div>
-                <div className="hero-particle"></div>
-                <div className="hero-particle"></div>
-                <div className="hero-particle"></div>
-                <div className="hero-particle"></div>
-            </div>
-
-
-            <div className="hero-badge">✦ Real-time Market Data</div>
-
-            <h1 className="hero-header">Market Insights, <br />Redefined.</h1>
+            <h1>Track your investments<br />with clarity.</h1>
             <p className="hero-subtitle">
-                Explore live stock market data, search your favorite companies, and manage your investments—all in one premium, lightning-fast platform.
+                Real-time quotes, historical charts, and a personal watchlist. 
+                Everything you need to stay informed, without the noise.
             </p>
 
             <div className="hero-buttons">
                 {isLoggedIn ? (
                     <Link to="/dashboard">
-                        <button className="btn-glow">Go to Dashboard</button>
+                        <button className="btn-primary">Go to Dashboard</button>
                     </Link>
                 ) : (
                     <>
                         <Link to="/signup">
-                            <button className="btn-glow">Get Started</button>
+                            <button className="btn-primary">Get Started</button>
                         </Link>
                         <Link to="/login">
-                            <button className="btn-glow btn-glass">Login</button>
+                            <button className="btn-secondary">Sign In</button>
                         </Link>
                     </>
                 )}
