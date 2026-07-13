@@ -4,9 +4,10 @@
 [![React](https://img.shields.io/badge/Frontend-React%20%7C%20Vite-61dafb.svg)](https://reactjs.org)
 [![Node.js](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933.svg)](https://nodejs.org)
 [![Database](https://img.shields.io/badge/Database-MongoDB%20%7C%20Mongoose-47A248.svg)](https://www.mongodb.com)
+[![APIs](https://img.shields.io/badge/APIs-Finnhub%20%7C%20Alpha%20Vantage%20%7C%20Twelve%20Data-ff6600.svg)](https://finnhub.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-An enterprise-grade, high-performance financial tracking dashboard built utilizing the decoupled MERN stack. Designed with a frosted glassmorphism interface, Stock Analyzer allows investors to monitor real-time stock quotes, visualize chronological price trends, manage customized watchlists, and query real-time market data securely.
+An enterprise-grade, high-performance financial tracking dashboard built utilizing the decoupled MERN stack. Designed with a frosted glassmorphism interface, Stock Analyzer allows investors to monitor real-time stock quotes, visualize chronological price trends, manage customized watchlists, and query real-time market data securely. The backend employs a **multi-provider fallback system** (Finnhub → Alpha Vantage → Twelve Data) ensuring maximum uptime and resilience against API rate limits.
 
 * **Live Deployment:** [https://stock-analyzer-henna.vercel.app/](https://stock-analyzer-henna.vercel.app/)
 * **API Server Endpoint:** [https://stock-analyzer-api-n9mz.onrender.com](https://stock-analyzer-api-n9mz.onrender.com)
@@ -23,10 +24,11 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
 [ API Gateway & Routing (Express + Cors) ]
            │             ▲
            ▼             │ Mongoose ODM
-[ Business Logic & Security (BcryptJS / Finnhub & Yahoo Services) ]
+[ Business Logic & Security (BcryptJS / Multi-Provider Service) ]
            │             │
            ▼             ▼
-  [ MongoDB Atlas ]   [ Finnhub & Yahoo APIs ]
+  [ MongoDB Atlas ]   [ Finnhub → Alpha Vantage → Twelve Data ]
+                        (automatic failover chain)
 ```
 
 1. **Authentication Flow:** Users register or log in. Server-side verification validates user credentials securely. Sessions are authorized via JSON Web Tokens, which are cached client-side.
@@ -55,8 +57,11 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
 | **CORS** | Cross-Origin Middleware | Controls client access domains; restricts and regulates traffic from authorized local hosts. |
 | **BcryptJS** | Cryptographic Hashing | Secures passwords using salted one-way hashing algorithms prior to database storage. |
 | **Recharts** | Interactive Visualization | Renders dynamic SVG charts representing historical stock values, including customizable tooltip cards. |
-| **Finnhub API** | Real-time Quote Engine | Serves autocomplete search suggestions and real-time market quotes using lightweight REST endpoints. |
-| **Yahoo Chart API**| Historical Data | Serves monthly chart metrics directly via public REST endpoints without cookie restrictions. |
+| **Finnhub API** | Primary Data Provider | Serves stock quotes (`/quote`), search suggestions (`/search`), and historical candle data (`/stock/candle`). |
+| **Alpha Vantage API** | Secondary Fallback | Provides `GLOBAL_QUOTE`, `SYMBOL_SEARCH`, and `TIME_SERIES_DAILY` endpoints when Finnhub is rate-limited. |
+| **Twelve Data API** | Tertiary Fallback | Supplies `/quote`, `/symbol_search`, and `/time_series` endpoints as final fallback provider. |
+
+> **Fallback Strategy:** Each data function (quotes, search, historical) tries Finnhub first. On failure (rate limit, error, or invalid response), it automatically falls through to Alpha Vantage, then Twelve Data — ensuring uninterrupted service.
 
 ---
 
@@ -99,6 +104,8 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
    MONGO_URI=your_mongodb_connection_string
    JWT_SECRET=your_jwt_secret_signing_key
    FINNHUB_API_KEY=your_finnhub_api_token
+   ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
+   TWELVE_DATA_API_KEY=your_twelve_data_api_key
    ```
 4. Start the backend development server:
    ```bash
@@ -146,8 +153,10 @@ Building this financial analyzer provided key insights into advanced full-stack 
 * Implemented token-based session tracking utilizing cryptographic password hashing and JSON Web Tokens.
 * Engineered secure route guards on the React client to restrict access to unauthorized user dashboards.
 
-### 4. Enterprise-Grade API Design
-* Integrated Finnhub API fetches strictly on the backend to protect credentials and bypass cloud host restrictions (like Render IP blocking).
+### 4. Enterprise-Grade API Design & Resilience
+* Engineered a multi-provider fallback system (Finnhub → Alpha Vantage → Twelve Data) to ensure uninterrupted service under rate-limiting conditions.
+* Implemented safe JSON parsing with `res.ok` checks and try-catch wrappers to gracefully handle non-JSON error responses (e.g., plain-text "Too Many Requests").
+* Integrated all API fetches strictly on the backend to protect credentials and bypass cloud host restrictions (like Render IP blocking).
 * Optimized network traffic in search inputs by managing suggestion fetches and handling autocomplete events.
 
 ### 5. Architectural Cleanliness & Refactoring
