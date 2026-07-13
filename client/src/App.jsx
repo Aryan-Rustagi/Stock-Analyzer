@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import SignUp from './pages/SignUp'
@@ -13,6 +14,7 @@ import './App.css'
 function Navigation() {
   const isLoggedIn = !!localStorage.getItem('token');
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   function handleLogout() {
     localStorage.removeItem('token');
@@ -20,20 +22,33 @@ function Navigation() {
     window.location.reload();
   }
 
+  function toggleMenu() {
+    setIsMenuOpen(!isMenuOpen);
+  }
+
+  function closeMenu() {
+    setIsMenuOpen(false);
+  }
+
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/">Stock Analyzer</Link>
+        <Link to="/" onClick={closeMenu}>Stock Analyzer</Link>
       </div>
-      <div className="navbar-links">
-        <Link to="/">Home</Link>
-        {isLoggedIn && <Link to="/dashboard">Dashboard</Link>}
-        {isLoggedIn && <Link to="/portfolio">Portfolio</Link>}
-        {isLoggedIn && <Link to="/searchstock">Search</Link>}
+      
+      <div className="mobile-menu-icon" onClick={toggleMenu}>
+        {isMenuOpen ? '✕' : '☰'}
+      </div>
+
+      <div className={`navbar-links ${isMenuOpen ? 'active' : ''}`}>
+        <Link to="/" onClick={closeMenu}>Home</Link>
+        {isLoggedIn && <Link to="/dashboard" onClick={closeMenu}>Dashboard</Link>}
+        {isLoggedIn && <Link to="/portfolio" onClick={closeMenu}>Portfolio</Link>}
+        {isLoggedIn && <Link to="/searchstock" onClick={closeMenu}>Search</Link>}
         {isLoggedIn ? (
-          <button className="btn-primary" onClick={handleLogout}>Logout</button>
+          <button className="btn-primary" onClick={() => { handleLogout(); closeMenu(); }}>Logout</button>
         ) : (
-          <Link to="/login"><button className="btn-primary">Sign In</button></Link>
+          <Link to="/login" onClick={closeMenu}><button className="btn-primary">Sign In</button></Link>
         )}
       </div>
     </nav>
@@ -59,7 +74,7 @@ function App() {
           </Routes>
         </main>
         <footer className="footer">
-          <p>&copy; 2026 Stock Analyzer</p>
+          <p>&copy; 2026 Stock Analyzer. Made by Aryan Rustagi.</p>
         </footer>
       </div>
     </BrowserRouter>
