@@ -34,12 +34,17 @@ async function searchStock(symbol) {
 
 async function suggestStockFinnhub(query) {
     const res = await fetch('https://finnhub.io/api/v1/search?q=' + query + '&token=' + token);
-    if (res.status === 429) {
-        throw new Error("RATE_LIMIT");
+    if (!res.ok) {
+        throw new Error("FINNHUB_ERROR_" + res.status);
     }
-    const data = await res.json();
+    var data;
+    try {
+        data = await res.json();
+    } catch (e) {
+        throw new Error("FINNHUB_INVALID_JSON");
+    }
     if (!data || !data.result) {
-        throw new Error("RATE_LIMIT");
+        throw new Error("FINNHUB_NO_RESULTS");
     }
     return data.result.slice(0, 5).map(function(q) {
         return {
@@ -52,9 +57,17 @@ async function suggestStockFinnhub(query) {
 
 async function suggestStockAlphaVantage(query) {
     const res = await fetch('https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=' + query + '&apikey=' + alphaVantageKey);
-    const data = await res.json();
+    if (!res.ok) {
+        throw new Error("ALPHA_VANTAGE_ERROR_" + res.status);
+    }
+    var data;
+    try {
+        data = await res.json();
+    } catch (e) {
+        throw new Error("ALPHA_VANTAGE_INVALID_JSON");
+    }
     if (!data || !data.bestMatches) {
-        return [];
+        throw new Error("ALPHA_VANTAGE_NO_RESULTS");
     }
     return data.bestMatches.slice(0, 5).map(function(match) {
         return {
@@ -67,7 +80,15 @@ async function suggestStockAlphaVantage(query) {
 
 async function suggestStockTwelveData(query) {
     const res = await fetch('https://api.twelvedata.com/symbol_search?symbol=' + query + '&outputsize=5');
-    const data = await res.json();
+    if (!res.ok) {
+        throw new Error("TWELVE_DATA_ERROR_" + res.status);
+    }
+    var data;
+    try {
+        data = await res.json();
+    } catch (e) {
+        throw new Error("TWELVE_DATA_INVALID_JSON");
+    }
     if (!data || !data.data || data.data.length === 0) {
         return [];
     }
