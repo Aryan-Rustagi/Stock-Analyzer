@@ -11,7 +11,7 @@ const portfolioRoutes = require('./routes/portfolioRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
+const clientBuildPath = process.env.CLIENT_BUILD_PATH || path.join(__dirname, '..', 'client', 'dist');
 
 app.use(cors());
 app.use(express.json());
