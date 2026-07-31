@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://stock-analyzer-api-n9mz.onrender.com' : 'http://localhost:5000');
+
 function Portfolio() {
     const [stock, setStock] = useState([]);
     const [symbol, setSymbol] = useState('');
@@ -23,7 +25,7 @@ function Portfolio() {
         setLoading(true);
         try {
             const response = await axios.get(
-                '/api/portfolio',
+                API_BASE_URL + '/api/portfolio',
                 { headers: { Authorization: 'Bearer ' + currentToken } }
             );
             setStock(response.data);
@@ -53,7 +55,7 @@ function Portfolio() {
         }
 
         try {
-            const res = await axios.get('/api/stock/suggestions/search?q=' + newSymbol, {
+            const res = await axios.get(API_BASE_URL + '/api/stock/suggestions/search?q=' + newSymbol, {
                 headers: { Authorization: 'Bearer ' + token }
             });
             setSuggestions(res.data);
@@ -89,7 +91,7 @@ function Portfolio() {
 
         try {
             await axios.post(
-                '/api/portfolio/add',
+                API_BASE_URL + '/api/portfolio/add',
                 { symbol: symbol.toUpperCase() },
                 { headers: { Authorization: 'Bearer ' + token } }
             );
@@ -106,7 +108,7 @@ function Portfolio() {
     async function handleRemove(id) {
         try {
             await axios.delete(
-                '/api/portfolio/' + id,
+                API_BASE_URL + '/api/portfolio/' + id,
                 { headers: { Authorization: 'Bearer ' + token } }
             );
             loadPortfolio();
