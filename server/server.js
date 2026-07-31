@@ -19,15 +19,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 
-app.get('/', function(req, res) {
-    res.send("Welcome to the stock analyzer - v1.0.3");
-});
-
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(clientBuildPath));
 
-    app.get('*', function(req, res) {
+    app.get('{*splat}', function(req, res) {
         res.sendFile(path.join(clientBuildPath, 'index.html'));
+    });
+} else {
+    app.get('/', function(req, res) {
+        res.send("Welcome to the stock analyzer - v1.0.3");
     });
 }
 
