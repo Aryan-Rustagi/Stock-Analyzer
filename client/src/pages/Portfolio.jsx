@@ -13,15 +13,27 @@ function Portfolio() {
     const token = localStorage.getItem('token');
 
     async function loadPortfolio() {
+        const currentToken = localStorage.getItem('token');
+        if (!currentToken) {
+            setError('Please log in to view your portfolio.');
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await axios.get(
-                'https://stock-analyzer-api-n9mz.onrender.com/api/portfolio',
-                { headers: { Authorization: 'Bearer ' + token } }
+                '/api/portfolio',
+                { headers: { Authorization: 'Bearer ' + currentToken } }
             );
             setStock(response.data);
+            setError('');
         } catch(err) {
-            setError('Failed to load portfolio.');
+            if (err.response?.status === 401) {
+                setError('Session expired or unauthorized. Please log in again.');
+            } else {
+                setError(err.response?.data?.message || 'Failed to load portfolio.');
+            }
         }
         setLoading(false);
     }
@@ -41,7 +53,7 @@ function Portfolio() {
         }
 
         try {
-            const res = await axios.get('https://stock-analyzer-api-n9mz.onrender.com/api/stock/suggestions/search?q=' + newSymbol, {
+            const res = await axios.get('/api/stock/suggestions/search?q=' + newSymbol, {
                 headers: { Authorization: 'Bearer ' + token }
             });
             setSuggestions(res.data);
@@ -77,7 +89,7 @@ function Portfolio() {
 
         try {
             await axios.post(
-                'https://stock-analyzer-api-n9mz.onrender.com/api/portfolio/add',
+                '/api/portfolio/add',
                 { symbol: symbol.toUpperCase() },
                 { headers: { Authorization: 'Bearer ' + token } }
             );
@@ -94,7 +106,7 @@ function Portfolio() {
     async function handleRemove(id) {
         try {
             await axios.delete(
-                'https://stock-analyzer-api-n9mz.onrender.com/api/portfolio/' + id,
+                '/api/portfolio/' + id,
                 { headers: { Authorization: 'Bearer ' + token } }
             );
             loadPortfolio();

@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -10,6 +11,7 @@ const portfolioRoutes = require('./routes/portfolioRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
 
 app.use(cors());
 app.use(express.json());
@@ -20,6 +22,14 @@ app.use('/api/portfolio', portfolioRoutes);
 app.get('/', function(req, res) {
     res.send("Welcome to the stock analyzer - v1.0.3");
 });
+
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(clientBuildPath));
+
+    app.get('*', function(req, res) {
+        res.sendFile(path.join(clientBuildPath, 'index.html'));
+    });
+}
 
 async function startServer() {
     await connectDb();

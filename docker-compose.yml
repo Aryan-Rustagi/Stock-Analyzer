@@ -1,0 +1,32 @@
+services:
+  client:
+    build: ./client
+    ports:
+      - "5173:5173"
+    environment:
+      # 'server' is the Docker service name — resolves to the server container's IP on the Docker network
+      - VITE_API_TARGET=http://server:5000
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+
