@@ -10,7 +10,8 @@
 
 An enterprise-grade, high-performance financial tracking dashboard built utilizing the decoupled MERN stack. Designed with a frosted glassmorphism interface, Stock Analyzer allows investors to monitor real-time stock quotes, visualize chronological price trends, manage customized watchlists, and query real-time market data securely. The backend employs a **multi-provider fallback system** (Finnhub → Alpha Vantage → Twelve Data) ensuring maximum uptime and resilience against API rate limits. The entire application is **fully containerized with Docker** for consistent, environment-independent deployment.
 
-* **Live Deployment:** [https://stock-analyzer-henna.vercel.app/](https://stock-analyzer-henna.vercel.app/)
+* **Railway Deployment:** [https://stock-analyzer-production-497e.up.railway.app/](https://stock-analyzer-production-497e.up.railway.app/)
+* **Vercel Deployment:** [https://stock-analyzer-henna.vercel.app/](https://stock-analyzer-henna.vercel.app/)
 * **API Server Endpoint:** [https://stock-analyzer-api-n9mz.onrender.com](https://stock-analyzer-api-n9mz.onrender.com)
 
 ---
