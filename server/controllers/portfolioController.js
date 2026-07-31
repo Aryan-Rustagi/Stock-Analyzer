@@ -1,12 +1,9 @@
 const Portfolio = require('../models/Portfolio');
-const jwt = require('jsonwebtoken');
 const { searchStock } = require('../services/stockService');
 
 async function getPortfolio(req, res) {
     try {
-        const token = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const stocks = await Portfolio.find({ user: decoded.id });
+        const stocks = await Portfolio.find({ user: req.user._id });
         
         const portfolioWithPrices = await Promise.all(stocks.map(async function(stock) {
             try {
@@ -22,37 +19,38 @@ async function getPortfolio(req, res) {
 
         res.json(portfolioWithPrices);
     } catch(error) {
+        console.error('getPortfolio error:', error);
         res.status(500).json({ message: 'Failed to fetch portfolio' });
     }
 }
 
 async function addStock(req, res) {
     try {
-        const token = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const { symbol } = req.body;
 
-        const existing = await Portfolio.findOne({ user: decoded.id, symbol: symbol });
+        const existing = await Portfolio.findOne({ user: req.user._id, symbol: symbol.toUpperCase() });
         if (existing) {
             return res.status(400).json({ message: 'Stock already added' });
         }
 
         const newStock = await Portfolio.create({
-            user: decoded.id,
-            symbol: symbol
+            user: req.user._id,
+            symbol: symbol.toUpperCase()
         });
 
         res.status(201).json(newStock);
     } catch(error) {
+        console.error('addStock error:', error);
         res.status(500).json({ message: 'Failed to add stock' });
     }
 }
 
 async function removeStock(req, res) {
     try {
-        await Portfolio.findByIdAndDelete(req.params.id);
+        await Portfolio.findOneAndDelete({ _id: req.params.id, user: req.user._id });
         res.json({ message: 'Stock removed' });
     } catch(error) {
+        console.error('removeStock error:', error);
         res.status(500).json({ message: 'Failed to remove stock' });
     }
 }

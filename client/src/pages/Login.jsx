@@ -31,7 +31,7 @@ function Login() {
         setError('');
 
         try {
-            const response = await axios.post('https://stock-analyzer-api-n9mz.onrender.com/api/auth/login', {
+            const response = await axios.post('/api/auth/login', {
                 email: email,
                 password: password
             });

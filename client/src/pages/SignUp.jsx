@@ -53,7 +53,7 @@ function SignUp() {
     setError('');
 
     try {
-      const response = await axios.post('https://stock-analyzer-api-n9mz.onrender.com/api/auth/register', {
+      const response = await axios.post('/api/auth/register', {
         name: name,
         email: email,
         password: password
