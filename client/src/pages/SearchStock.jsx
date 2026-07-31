@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://stock-analyzer-api-n9mz.onrender.com' : 'http://localhost:5000');
+
 function SearchStock() {
     const [symbol, setSymbol] = useState('');
     const [stockData, setStockData] = useState(null);
@@ -19,7 +21,7 @@ function SearchStock() {
             }
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('/api/stock/suggestions/search?q=' + symbol, {
+                const res = await axios.get(API_BASE_URL + '/api/stock/suggestions/search?q=' + symbol, {
                     headers: { Authorization: 'Bearer ' + token }
                 });
                 setSuggestions(res.data);
@@ -49,7 +51,7 @@ function SearchStock() {
     async function executeSearch(searchSymbol) {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('/api/stock/' + searchSymbol, {
+            const res = await axios.get(API_BASE_URL + '/api/stock/' + searchSymbol, {
                 headers: { Authorization: 'Bearer ' + token }
             });
             setStockData(res.data);
@@ -73,7 +75,7 @@ function SearchStock() {
     async function loadChart() {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('/api/stock/' + symbol + '/history', {
+            const res = await axios.get(API_BASE_URL + '/api/stock/' + symbol + '/history', {
                 headers: { Authorization: 'Bearer ' + token }
             });
             setHistoryData(res.data);

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://stock-analyzer-api-n9mz.onrender.com' : 'http://localhost:5000');
+
 function SignUp() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -53,7 +55,7 @@ function SignUp() {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await axios.post(API_BASE_URL + '/api/auth/register', {
         name: name,
         email: email,
         password: password
