@@ -34,8 +34,7 @@ async function searchStockFinnhub(symbol) {
         open: data.o,
         high: data.h,
         low: data.l,
-        volume: 0
-        
+        volume: parseInt(data.v) || 0
     };
 }
 
