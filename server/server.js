@@ -21,10 +21,16 @@ app.use('/api/auth', authRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 
+app.get('/health', function(req, res) {
+    res.status(200).json({
+        msg: "ok"
+    });
+});
+
 if (process.env.NODE_ENV === 'production' && fs.existsSync(indexHtmlPath)) {
     app.use(express.static(clientBuildPath));
 
-    app.get('*', function(req, res) {
+    app.get('{*splat}', function(req, res) {
         res.sendFile(indexHtmlPath);
     });
 } else {
@@ -33,11 +39,6 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(indexHtmlPath)) {
     });
 }
 
-app.get('/health',function(req,res){
-    res.status(200).json({
-        msg:"ok"
-    })
-});
 
 async function startServer() {
     await connectDb();
