@@ -33,6 +33,12 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(indexHtmlPath)) {
     });
 }
 
+app.get('/health',function(req,res){
+    res.status(200).json({
+        msg:"ok"
+    })
+});
+
 async function startServer() {
     await connectDb();
     app.listen(PORT, function() {
