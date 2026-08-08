@@ -9,6 +9,7 @@ const connectDb = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const stockRoutes = require('./routes/stockRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/health', function(req, res) {
     res.status(200).json({
