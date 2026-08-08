@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// Non-hoisted Function Expression:
+// Unlike `function foo() {}` declarations which are hoisted to the top of the scope,
+// `const protect = ...` is bound to a const variable and cannot be called prior to its line of initialization (Temporal Dead Zone).
 const protect = async function (req, res, next) {
     let token;
 

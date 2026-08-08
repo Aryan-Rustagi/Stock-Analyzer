@@ -1,7 +1,15 @@
-// Helper functions to fetch API keys dynamically at request time
-function getFinnhubKey() { return process.env.FINNHUB_API_KEY; }
-function getAlphaVantageKey() { return process.env.ALPHA_VANTAGE_API_KEY; }
-function getTwelveDataKey() { return process.env.TWELVE_DATA_API_KEY; }
+// Demonstrating JavaScript Closures:
+// `createApiKeyGetter` is a closure factory function. The returned inner function retains lexical access
+// to `envVarName` from its outer enclosing scope even after `createApiKeyGetter` has finished executing.
+function createApiKeyGetter(envVarName) {
+    return function() {
+        return process.env[envVarName];
+    };
+}
+
+const getFinnhubKey = createApiKeyGetter('FINNHUB_API_KEY');
+const getAlphaVantageKey = createApiKeyGetter('ALPHA_VANTAGE_API_KEY');
+const getTwelveDataKey = createApiKeyGetter('TWELVE_DATA_API_KEY');
 
 // ==================== SEARCH STOCK (Quote/Price) ====================
 
