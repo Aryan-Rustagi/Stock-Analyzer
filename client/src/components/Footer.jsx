@@ -6,6 +6,7 @@ function Footer() {
       <div>
         <h4>Stock Analyzer</h4>
         <p>Empowering smarter investment decisions with dependable market perspective.</p>
+        <h6>Made by Aryan Rustagi</h6>
       </div>
 
       <div className="footer-links">
