@@ -70,6 +70,9 @@ function Portfolio() {
         }
     }
 
+    // Demonstrating Closures in React Event Handlers:
+    // `handleBlur` creates an inner callback passed to `setTimeout`.
+    // The inner function retains a closure reference to `setShowSuggestions` from the enclosing React component scope.
     function handleBlur() {
         setTimeout(function() {
             setShowSuggestions(false);

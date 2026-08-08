@@ -40,11 +40,15 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(indexHtmlPath)) {
 }
 
 
+// Demonstrating JavaScript Hoisting:
+// 1. Function Declarations (`function startServer()`) are hoisted to the top of the scope, allowing them to be called before definition.
+// 2. Variable/Expression Declarations (`const app`, `const protect = ...`) stay in Temporal Dead Zone (TDZ) and are NOT hoisted.
+
+startServer(); // Invoked before definition thanks to function declaration hoisting
+
 async function startServer() {
     await connectDb();
     app.listen(PORT, function() {
         console.log(`Server is running on http://localhost:${PORT}`);
     });
 }
-
-startServer();
