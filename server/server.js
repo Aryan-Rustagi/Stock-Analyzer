@@ -48,6 +48,26 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(indexHtmlPath)) {
 
 startServer(); // Invoked before definition thanks to function declaration hoisting
 
+// =========================================================================
+// Demonstrating JavaScript Event Loop (Microtasks vs Macrotasks)
+// =========================================================================
+console.log('Event Loop Demo: 1. Synchronous script execution');
+
+setTimeout(function() {
+    // This is a Macrotask. It is pushed to the Timers phase of the Event Loop 
+    // and runs AFTER all synchronous code and all Microtasks have finished.
+    console.log('Event Loop Demo: 4. setTimeout (Macrotask)');
+}, 0);
+
+Promise.resolve().then(function() {
+    // This is a Microtask. It is pushed to the Microtask queue and runs 
+    // immediately after the synchronous execution phase, BEFORE Macrotasks.
+    console.log('Event Loop Demo: 3. Promise resolved (Microtask)');
+});
+
+console.log('Event Loop Demo: 2. Synchronous script execution ended');
+// =========================================================================
+
 async function startServer() {
     await connectDb();
     app.listen(PORT, function() {
