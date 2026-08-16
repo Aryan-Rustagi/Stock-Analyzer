@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "demo:concepts": "node -e \"require('./utils/hoistingDemo').runHoistingDemonstration(); require('./utils/asyncAwaitDemo').runAsyncAwaitDemonstration(); require('./utils/promiseVsCallback').demonstratePromiseConcurrency();\"",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
