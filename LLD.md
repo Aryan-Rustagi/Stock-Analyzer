@@ -128,16 +128,23 @@ function parseStructuredOutput(rawText) {
 3. On secondary exception, delegates to `searchStockTwelveData(symbol)`.
 4. Output is passed through a normalizer function returning uniform keys (`symbol`, `companyName`, `currentPrice`, `previousClose`, `open`, `high`, `low`, `volume`).
 
-### 4.3 Closures — API Key Encapsulation (`stockService.js`)
+### 4.3 Closures — Private State & Cache Encapsulation (`utils/closureUtils.js` & `stockService.js`)
 ```javascript
-// Closure factory: API key is captured in lexical scope and never re-exposed
+// 1. API Key Factory Closure: captures private envVar in lexical scope
 function createApiKeyGetter(envVar) {
-    var key = process.env[envVar];
-    return function getKey() { return key; };
+    return function getKey() { return process.env[envVar]; };
 }
-var getFinnhubKey = createApiKeyGetter('FINNHUB_API_KEY');
+
+// 2. In-Memory Cache Closure: encapsulates private Map and TTL logic
+function createInMemoryCache(ttlMs) {
+    const cacheStore = new Map(); // Private state
+    return {
+        get(key) { /* checks expiry against private cacheStore */ },
+        set(key, val) { /* sets key/val with expiresAt */ }
+    };
+}
 ```
-Also used in React event handlers (`Dashboard.jsx`, `Portfolio.jsx`) where `askQuestion()` closes over `question` state and `token` from the enclosing component scope.
+In `stockService.js`, `quoteCache` caches stock quotes for 60 seconds, preventing external 429 rate limit errors while encapsulating private state.
 
 ### 4.4 Event Loop — Microtasks vs Macrotasks (`server.js`)
 ```javascript
@@ -157,7 +164,7 @@ console.log('2. Synchronous script execution ended');
 // Output order: 1 → 2 → 3 → 4 (proving microtask priority)
 ```
 
-### 4.5 Hoisting & Temporal Dead Zone (`server.js`)
+### 4.5 Hoisting & Temporal Dead Zone (`server.js` & `utils/hoistingDemo.js`)
 ```javascript
 startServer(); // ✅ Works — function declarations are hoisted to top of scope
 
@@ -168,18 +175,17 @@ async function startServer() {
 ```
 In contrast, `const protect = function(req, res, next) { ... }` in `authMiddleware.js` is NOT hoisted — accessing it before declaration throws a `ReferenceError` (TDZ).
 
-### 4.6 Parallel Execution with `Promise.all` (`portfolioController.js`)
-```javascript
-// Promise.all fires all API calls concurrently, not sequentially
-var portfolioWithPrices = await Promise.all(
-    items.map(async function(item) {
-        var quote = await searchStock(item.symbol);
-        return { _id: item._id, symbol: item.symbol, price: quote.currentPrice };
-    })
-);
-```
+### 4.6 Promises vs Callbacks & Concurrency (`utils/promiseVsCallback.js` & `portfolioController.js`)
+- **Promisification:** `promisify(callbackFn)` wraps legacy callback patterns into standard Promise instances.
+- **Promise.all:** Concurrent fail-fast parallel resolution across multiple stock quote requests in `portfolioController.js`.
+- **Promise.allSettled:** Resilient parallel execution handling both fulfilled and rejected promises without crashing.
 
-### 4.7 Express Callback Handlers + async/await
+### 4.7 async / await & Error Handling (`utils/asyncAwaitDemo.js`)
+- `async` marks functions that return Promises implicitly.
+- `await` pauses execution non-blockingly inside async functions until Promise settlement.
+- Standard `try / catch / finally` blocks handle synchronous and asynchronous exceptions uniformly.
+
+### 4.8 Express Callback Handlers + async/await
 All controllers use Express's classic `(req, res, next)` callback signature combined with `async/await` and `try/catch`:
 ```javascript
 async function getPortfolio(req, res, next) {
