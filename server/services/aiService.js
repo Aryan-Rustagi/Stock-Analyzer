@@ -85,7 +85,7 @@ async function analyzeStockWithAI(stockData) {
 
     // LLM API call using Groq's chat completions with system + user message structure
     var completion = await client.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
@@ -125,7 +125,7 @@ async function chatWithAI(question) {
 
     // Chat uses the lightest available model for speed
     var completion = await client.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         messages: [
             { role: 'system', content: buildChatSystemPrompt() },
             { role: 'user', content: question }
