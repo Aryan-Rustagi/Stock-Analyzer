@@ -23,14 +23,7 @@ const portfolioSchema = new mongoose.Schema({
 ```
 - **Relational Mapping:** `user` field references the `User` model via `ObjectId`, enabling `.populate('user', 'email')` for JOIN-equivalent queries in a NoSQL environment.
 
-### SQL-Equivalent JOIN Reference (`db/queries.sql`)
-For assessors evaluating relational data capabilities, the project includes a documented SQL schema and JOIN query file demonstrating equivalent operations:
-```sql
-SELECT p.symbol, u.email
-FROM portfolios p
-INNER JOIN users u ON p.user_id = u.id
-WHERE u.id = $1;
-```
+
 
 ---
 
@@ -128,62 +121,33 @@ function parseStructuredOutput(rawText) {
 3. On secondary exception, delegates to `searchStockTwelveData(symbol)`.
 4. Output is passed through a normalizer function returning uniform keys (`symbol`, `companyName`, `currentPrice`, `previousClose`, `open`, `high`, `low`, `volume`).
 
-### 4.3 Closures — Private State & Cache Encapsulation (`utils/closureUtils.js` & `stockService.js`)
+### 4.3 In-Memory TTL Caching (`utils/cache.js` & `stockService.js`)
 ```javascript
-// 1. API Key Factory Closure: captures private envVar in lexical scope
-function createApiKeyGetter(envVar) {
-    return function getKey() { return process.env[envVar]; };
-}
-
-// 2. In-Memory Cache Closure: encapsulates private Map and TTL logic
-function createInMemoryCache(ttlMs) {
-    const cacheStore = new Map(); // Private state
+function createInMemoryCache(ttlMs = 60000) {
+    const cacheStore = new Map();
     return {
-        get(key) { /* checks expiry against private cacheStore */ },
-        set(key, val) { /* sets key/val with expiresAt */ }
+        get(key) {
+            const entry = cacheStore.get(key);
+            if (!entry) return null;
+            if (Date.now() > entry.expiresAt) {
+                cacheStore.delete(key);
+                return null;
+            }
+            return entry.value;
+        },
+        set(key, value) {
+            cacheStore.set(key, { value, expiresAt: Date.now() + ttlMs });
+            return value;
+        }
     };
 }
 ```
-In `stockService.js`, `quoteCache` caches stock quotes for 60 seconds, preventing external 429 rate limit errors while encapsulating private state.
+In `stockService.js`, `quoteCache` caches stock quotes for 60 seconds, and `historicalCache` caches 30-day historical chart data for 5 minutes, preventing external 429 rate limit errors.
 
-### 4.4 Event Loop — Microtasks vs Macrotasks (`server.js`)
-```javascript
-console.log('1. Synchronous script execution');
-
-setTimeout(function() {
-    // Macrotask: pushed to Timers phase, runs AFTER all synchronous code + microtasks
-    console.log('4. setTimeout (Macrotask)');
-}, 0);
-
-Promise.resolve().then(function() {
-    // Microtask: runs immediately after synchronous phase, BEFORE macrotasks
-    console.log('3. Promise resolved (Microtask)');
-});
-
-console.log('2. Synchronous script execution ended');
-// Output order: 1 → 2 → 3 → 4 (proving microtask priority)
-```
-
-### 4.5 Hoisting & Temporal Dead Zone (`server.js` & `utils/hoistingDemo.js`)
-```javascript
-startServer(); // ✅ Works — function declarations are hoisted to top of scope
-
-async function startServer() {
-    await connectDb();
-    app.listen(PORT);
-}
-```
-In contrast, `const protect = function(req, res, next) { ... }` in `authMiddleware.js` is NOT hoisted — accessing it before declaration throws a `ReferenceError` (TDZ).
-
-### 4.6 Promises vs Callbacks & Concurrency (`utils/promiseVsCallback.js` & `portfolioController.js`)
-- **Promisification:** `promisify(callbackFn)` wraps legacy callback patterns into standard Promise instances.
-- **Promise.all:** Concurrent fail-fast parallel resolution across multiple stock quote requests in `portfolioController.js`.
-- **Promise.allSettled:** Resilient parallel execution handling both fulfilled and rejected promises without crashing.
-
-### 4.7 async / await & Error Handling (`utils/asyncAwaitDemo.js`)
-- `async` marks functions that return Promises implicitly.
-- `await` pauses execution non-blockingly inside async functions until Promise settlement.
-- Standard `try / catch / finally` blocks handle synchronous and asynchronous exceptions uniformly.
+### 4.4 Asynchronous Concurrency & Error Handling
+- **Promise.all:** Concurrent parallel resolution across multiple stock quote requests in `portfolioController.js`.
+- **async / await:** Used across all services and controllers for clean, non-blocking asynchronous control flow.
+- Standard `try / catch / finally` blocks handle external API failures and gracefully fail over between data providers.
 
 ### 4.8 Express Callback Handlers + async/await
 All controllers use Express's classic `(req, res, next)` callback signature combined with `async/await` and `try/catch`:
@@ -239,18 +203,17 @@ Stock-Analyzer/
 ├── client/
 │   └── src/
 │       ├── pages/           # Login, SignUp, SearchStock, Portfolio, Dashboard
-│       ├── components/      # Navbar, Hero, Footer, ProtectedRoute
+│       ├── components/      # Hero, About, ProtectedRoute
 │       └── config.js        # Auto-detect local vs production API URL
 ├── server/
-│   ├── config/db.js         # MongoDB connection (Mongoose)
+│   ├── config/              # db.js, validateEnv.js
 │   ├── models/              # User.js, Portfolio.js (Mongoose schemas)
 │   ├── routes/              # authRoutes.js, stockRoutes.js, portfolioRoutes.js, aiRoutes.js
 │   ├── controllers/         # authController.js, stockController.js, portfolioController.js, aiController.js
-│   ├── services/            # stockService.js (3-tier fallback), aiService.js (Groq LLM + prompts)
-│   ├── middleware/          # authMiddleware.js (JWT + TDZ documentation)
-│   ├── db/queries.sql       # SQL JOIN reference for relational data concepts
-│   └── server.js            # Entry point (hoisting + event loop demos)
-├── docs/                    # PRD.md, HLD.md, LLD.md (duplicated for docs/ folder)
+│   ├── services/            # stockService.js (3-tier fallback), aiService.js (Groq LLM)
+│   ├── middleware/          # authMiddleware.js (JWT authentication guard)
+│   ├── utils/               # cache.js (in-memory TTL cache)
+│   └── server.js            # Express entry point
 ├── PRD.md                   # Product Requirements Document
 ├── HLD.md                   # High-Level Design
 ├── LLD.md                   # Low-Level Design (this file)

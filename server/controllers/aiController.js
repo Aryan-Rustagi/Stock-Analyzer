@@ -13,7 +13,7 @@ async function getAIAnalysis(req, res, next) {
         // Step 1: Fetch real-time stock data
         var stockData = await searchStock(symbol.toUpperCase());
 
-        // Step 2: Send to Cohere LLM with engineered prompts for structured analysis
+        // Step 2: Send to Groq LLM with engineered prompts for structured analysis
         var analysis = await analyzeStockWithAI(stockData);
 
         // Step 3: Return structured JSON result to client

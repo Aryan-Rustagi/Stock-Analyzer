@@ -47,7 +47,7 @@ All commit messages must follow the [Conventional Commits v1.0.0](https://www.co
 - `feat:` A new user-facing feature (e.g., `feat(ai): integrate Groq Llama-3.1 structured analysis`)
 - `fix:` A bug fix (e.g., `fix(stockService): resolve Alpha Vantage 429 fallback switch`)
 - `docs:` Documentation changes (e.g., `docs: add LLD, HLD, and viva assessment guides`)
-- `refactor:` Code changes that neither fix a bug nor add a feature (e.g., `refactor: extract in-memory cache to closureUtils`)
+- `refactor:` Code changes that neither fix a bug nor add a feature (e.g., `refactor: extract in-memory cache to cache.js`)
 - `test:` Adding or updating tests
 - `chore:` Maintenance tasks, dependency updates, build tooling
 

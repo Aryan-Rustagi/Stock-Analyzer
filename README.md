@@ -232,21 +232,26 @@ Building this financial analyzer provided key insights into advanced full-stack 
 * Collaborated with AI tools to write clean, comment-free code and document architectural patterns.
 
 ---
+---
 
-## Technical Assessment Rubric Compliance
+## Project Structure
 
-| Rubric Item | Weight | Project Implementation & File References |
-|---|---|---|
-| **Environment variables & secrets management** | **0.2** | • Root `.env.example`, `server/.env.example`, `client/.env.example` templates.<br>• Root `.gitignore` prevents `.env`, credentials, keys, and tokens from leaking.<br>• `server/config/validateEnv.js` validates required keys on startup and masks secrets (`gsk_***1234`) in console output.<br>• Zero hardcoded credentials in source code. |
-| **Git workflow** | **0.3** | • `GIT_WORKFLOW.md` defines Git Flow (main, dev, feature branches).<br>• Conventional Commits standard (`feat:`, `fix:`, `docs:`, `refactor:`).<br>• `.github/pull_request_template.md` standardizes review and quality checks.<br>• `.github/workflows/ci.yml` automates syntax validation and build testing on pushes/PRs. |
-| **JavaScript — async/await** | **0.1** | • Used across `stockService.js`, `aiService.js`, `portfolioController.js`, `authController.js`.<br>• Clean `try/catch/finally` error boundaries.<br>• `server/utils/asyncAwaitDemo.js` demonstrates non-blocking sequential vs parallel async execution. |
-| **JavaScript — Closures** | **0.1** | • `server/utils/closureUtils.js` provides `createApiKeyGetter`, `createInMemoryCache`, `createRateLimiter`.<br>• `stockService.js` uses closure-based cache (60s TTL) to cache stock quotes and prevent 429 rate limits.<br>• React event handlers close over component state in frontend. |
-| **JavaScript — Hoisting** | **0.1** | • `server/server.js` invokes `startServer()` before definition using function declaration hoisting.<br>• `server/utils/hoistingDemo.js` demonstrates function declarations vs expressions, `var` (`undefined`) vs `const`/`let` Temporal Dead Zone (`ReferenceError`). |
-| **JavaScript — Promises vs Callbacks** | **0.1** | • `portfolioController.js` wraps callback operations via `fetchStockWithPromise` constructor and resolves arrays via `Promise.all`.<br>• `server/utils/promiseVsCallback.js` demonstrates Promisification (`promisify()`), `Promise.all`, `Promise.allSettled`, and `Promise.race`. |
-
-### Interactive Concept Demonstration Command
-Run the unified demonstration script in your terminal to see all JavaScript concepts in action:
-```bash
-npm run demo:concepts
 ```
-
+Stock-Analyzer/
+├── client/                 # React 18 + Vite frontend SPA
+│   ├── src/
+│   │   ├── components/     # ProtectedRoute, Hero, About
+│   │   ├── pages/          # Dashboard, SearchStock, Portfolio, Login, SignUp
+│   │   ├── App.jsx         # App routing & navigation
+│   │   └── config.js       # Dynamic API base URL configuration
+├── server/                 # Node.js + Express backend REST API
+│   ├── config/             # MongoDB connection and environment validator
+│   ├── controllers/        # Auth, Stock, Portfolio, and AI controllers
+│   ├── middleware/         # JWT authentication guard
+│   ├── models/             # User and Portfolio Mongoose models
+│   ├── routes/             # Express API routes
+│   ├── services/           # External stock data APIs and Groq AI service
+│   ├── utils/              # In-memory TTL cache utility
+│   └── server.js           # Express app entry point
+└── docker-compose.yml      # Multi-container orchestration
+```

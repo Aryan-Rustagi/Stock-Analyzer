@@ -1,23 +1,13 @@
-const { createApiKeyGetter, createInMemoryCache } = require('../utils/closureUtils');
+const { createInMemoryCache } = require('../utils/cache');
 
-// ==============================================================================
-// JavaScript Concept: Closures
-// 1. `createApiKeyGetter` encapsulates API key retrieval within lexical scope.
-// 2. `quoteCache` and `historicalCache` encapsulate an in-memory Map with a 60-second TTL.
-// ==============================================================================
-
-const getFinnhubKey = createApiKeyGetter('FINNHUB_API_KEY');
-const getAlphaVantageKey = createApiKeyGetter('ALPHA_VANTAGE_API_KEY');
-const getTwelveDataKey = createApiKeyGetter('TWELVE_DATA_API_KEY');
-
-// In-Memory cache using closures (60-second cache to prevent 429 rate limits)
-const quoteCache = createInMemoryCache(60 * 1000);
-const historicalCache = createInMemoryCache(5 * 60 * 1000);
+// In-Memory cache with TTL to prevent provider rate limits (HTTP 429)
+const quoteCache = createInMemoryCache(60 * 1000);       // 1 minute
+const historicalCache = createInMemoryCache(5 * 60 * 1000); // 5 minutes
 
 // ==================== SEARCH STOCK (Quote/Price) ====================
 
 async function searchStockFinnhub(symbol) {
-    const token = getFinnhubKey();
+    const token = process.env.FINNHUB_API_KEY;
     const res = await fetch('https://finnhub.io/api/v1/quote?symbol=' + symbol + '&token=' + token);
     if (!res.ok) throw new Error("FINNHUB_ERROR_" + res.status);
     let data;
@@ -50,7 +40,7 @@ async function searchStockFinnhub(symbol) {
 }
 
 async function searchStockAlphaVantage(symbol) {
-    const alphaVantageKey = getAlphaVantageKey();
+    const alphaVantageKey = process.env.ALPHA_VANTAGE_API_KEY;
     const res = await fetch('https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=' + symbol + '&apikey=' + alphaVantageKey);
     if (!res.ok) throw new Error("ALPHA_VANTAGE_ERROR_" + res.status);
     let data;
@@ -74,7 +64,7 @@ async function searchStockAlphaVantage(symbol) {
 }
 
 async function searchStockTwelveData(symbol) {
-    const twelveDataKey = getTwelveDataKey();
+    const twelveDataKey = process.env.TWELVE_DATA_API_KEY;
     const res = await fetch('https://api.twelvedata.com/quote?symbol=' + symbol + '&apikey=' + twelveDataKey);
     if (!res.ok) throw new Error("TWELVE_DATA_ERROR_" + res.status);
     let data;
@@ -102,7 +92,7 @@ async function searchStockTwelveData(symbol) {
 async function searchStock(symbol) {
     const cleanSymbol = symbol.toUpperCase().trim();
 
-    // Check closure cache first
+    // Check cache first
     const cached = quoteCache.get(cleanSymbol);
     if (cached) {
         return cached;
@@ -112,12 +102,12 @@ async function searchStock(symbol) {
         const result = await searchStockFinnhub(cleanSymbol);
         return quoteCache.set(cleanSymbol, result);
     } catch (error) {
-        console.log('Finnhub quote failed (' + error.message + '), trying Alpha Vantage');
+        console.warn(`Finnhub quote failed (${error.message}), trying Alpha Vantage`);
         try {
             const result = await searchStockAlphaVantage(cleanSymbol);
             return quoteCache.set(cleanSymbol, result);
         } catch (fallbackError) {
-            console.log('Alpha Vantage quote failed (' + fallbackError.message + '), trying Twelve Data');
+            console.warn(`Alpha Vantage quote failed (${fallbackError.message}), trying Twelve Data`);
             try {
                 const result = await searchStockTwelveData(cleanSymbol);
                 return quoteCache.set(cleanSymbol, result);
@@ -131,7 +121,7 @@ async function searchStock(symbol) {
 // ==================== SUGGEST STOCK (Search) ====================
 
 async function suggestStockFinnhub(query) {
-    const token = getFinnhubKey();
+    const token = process.env.FINNHUB_API_KEY;
     const res = await fetch('https://finnhub.io/api/v1/search?q=' + query + '&token=' + token);
     if (!res.ok) throw new Error("FINNHUB_ERROR_" + res.status);
     let data;
@@ -143,7 +133,7 @@ async function suggestStockFinnhub(query) {
 }
 
 async function suggestStockAlphaVantage(query) {
-    const alphaVantageKey = getAlphaVantageKey();
+    const alphaVantageKey = process.env.ALPHA_VANTAGE_API_KEY;
     const res = await fetch('https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=' + query + '&apikey=' + alphaVantageKey);
     if (!res.ok) throw new Error("ALPHA_VANTAGE_ERROR_" + res.status);
     let data;
@@ -155,7 +145,7 @@ async function suggestStockAlphaVantage(query) {
 }
 
 async function suggestStockTwelveData(query) {
-    const twelveDataKey = getTwelveDataKey();
+    const twelveDataKey = process.env.TWELVE_DATA_API_KEY;
     const res = await fetch('https://api.twelvedata.com/symbol_search?symbol=' + query + '&outputsize=5&apikey=' + twelveDataKey);
     if (!res.ok) throw new Error("TWELVE_DATA_ERROR_" + res.status);
     let data;
@@ -170,11 +160,11 @@ async function suggestStock(query) {
     try {
         return await suggestStockFinnhub(query);
     } catch (error) {
-        console.log('Finnhub search failed, falling back to Alpha Vantage');
+        console.warn('Finnhub search failed, falling back to Alpha Vantage');
         try {
             return await suggestStockAlphaVantage(query);
         } catch (fallbackError) {
-            console.log('Alpha Vantage search failed, falling back to Twelve Data');
+            console.warn('Alpha Vantage search failed, falling back to Twelve Data');
             try {
                 return await suggestStockTwelveData(query);
             } catch (twelveError) {
@@ -187,7 +177,7 @@ async function suggestStock(query) {
 // ==================== HISTORICAL DATA ====================
 
 async function fetchHistoricalFinnhub(symbol) {
-    const token = getFinnhubKey();
+    const token = process.env.FINNHUB_API_KEY;
     const now = Math.floor(Date.now() / 1000);
     const from = now - (30 * 24 * 60 * 60); // 30 days ago
     const res = await fetch('https://finnhub.io/api/v1/stock/candle?symbol=' + symbol + '&resolution=D&from=' + from + '&to=' + now + '&token=' + token);
@@ -209,7 +199,7 @@ async function fetchHistoricalFinnhub(symbol) {
 }
 
 async function fetchHistoricalAlphaVantage(symbol) {
-    const alphaVantageKey = getAlphaVantageKey();
+    const alphaVantageKey = process.env.ALPHA_VANTAGE_API_KEY;
     const res = await fetch('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=' + symbol + '&apikey=' + alphaVantageKey);
     if (!res.ok) throw new Error("ALPHA_VANTAGE_ERROR_" + res.status);
     let data;
@@ -228,7 +218,7 @@ async function fetchHistoricalAlphaVantage(symbol) {
 }
 
 async function fetchHistoricalTwelveData(symbol) {
-    const twelveDataKey = getTwelveDataKey();
+    const twelveDataKey = process.env.TWELVE_DATA_API_KEY;
     const res = await fetch('https://api.twelvedata.com/time_series?symbol=' + symbol + '&interval=1day&outputsize=30&apikey=' + twelveDataKey);
     if (!res.ok) throw new Error("TWELVE_DATA_ERROR_" + res.status);
     let data;
@@ -255,12 +245,12 @@ async function fetchHistoricalData(symbol) {
         const result = await fetchHistoricalFinnhub(cleanSymbol);
         return historicalCache.set(cleanSymbol, result);
     } catch (error) {
-        console.log('Finnhub historical failed (' + error.message + '), trying Alpha Vantage');
+        console.warn(`Finnhub historical failed (${error.message}), trying Alpha Vantage`);
         try {
             const result = await fetchHistoricalAlphaVantage(cleanSymbol);
             return historicalCache.set(cleanSymbol, result);
         } catch (fallbackError) {
-            console.log('Alpha Vantage historical failed (' + fallbackError.message + '), trying Twelve Data');
+            console.warn(`Alpha Vantage historical failed (${fallbackError.message}), trying Twelve Data`);
             try {
                 const result = await fetchHistoricalTwelveData(cleanSymbol);
                 return historicalCache.set(cleanSymbol, result);

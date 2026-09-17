@@ -84,7 +84,7 @@ function SearchStock() {
             });
             setHistoryData(res.data);
             setShowChart(true);
-        } catch(err) {
+        } catch {
             setError('Failed to load chart data.');
         }
     }

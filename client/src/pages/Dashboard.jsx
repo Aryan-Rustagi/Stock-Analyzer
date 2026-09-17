@@ -25,7 +25,6 @@ function Dashboard() {
         window.location.reload();
     }
 
-    // Closure: askQuestion captures the current `question` state and token from enclosing scope
     async function askQuestion(q) {
         var text = (q || question).trim();
         if (!text) return;
@@ -54,7 +53,6 @@ function Dashboard() {
         askQuestion(question);
     }
 
-    // Closure: handleSampleClick closes over the sample string and calls askQuestion
     function handleSampleClick(sample) {
         setQuestion(sample);
         askQuestion(sample);

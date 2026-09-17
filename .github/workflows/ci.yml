@@ -35,9 +35,15 @@ jobs:
           npm --prefix client install
           npm --prefix client run build
 
-      - name: Run JavaScript concepts demo syntax check
+      - name: Lint client
         run: |
-          node -e "require('./server/utils/closureUtils'); console.log('Closure Utils OK');"
-          node -e "require('./server/utils/hoistingDemo'); console.log('Hoisting Demo OK');"
-          node -e "require('./server/utils/promiseVsCallback'); console.log('Promise vs Callback Demo OK');"
-          node -e "require('./server/utils/asyncAwaitDemo'); console.log('Async/Await Demo OK');"
+          npm --prefix client run lint
+
+      - name: Verify server syntax
+        run: |
+          node --check server/server.js
+          node --check server/services/stockService.js
+          node --check server/services/aiService.js
+          node --check server/controllers/portfolioController.js
+          node --check server/utils/cache.js
+

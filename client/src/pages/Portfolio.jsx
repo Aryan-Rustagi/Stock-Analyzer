@@ -21,7 +21,6 @@ function Portfolio() {
             return;
         }
 
-        setLoading(true);
         try {
             const response = await axios.get(
                 API_BASE_URL + '/api/portfolio',
@@ -35,12 +34,48 @@ function Portfolio() {
             } else {
                 setError(err.response?.data?.message || 'Failed to load portfolio.');
             }
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     useEffect(function() {
-        loadPortfolio();
+        let isMounted = true;
+        const currentToken = localStorage.getItem('token');
+        if (!currentToken) {
+            Promise.resolve().then(() => {
+                if (isMounted) {
+                    setError('Please log in to view your portfolio.');
+                    setLoading(false);
+                }
+            });
+            return;
+        }
+
+        axios.get(API_BASE_URL + '/api/portfolio', {
+            headers: { Authorization: 'Bearer ' + currentToken }
+        })
+        .then(function(res) {
+            if (isMounted) {
+                setStock(res.data);
+                setError('');
+                setLoading(false);
+            }
+        })
+        .catch(function(err) {
+            if (isMounted) {
+                if (err.response?.status === 401) {
+                    setError('Session expired or unauthorized. Please log in again.');
+                } else {
+                    setError(err.response?.data?.message || 'Failed to load portfolio.');
+                }
+                setLoading(false);
+            }
+        });
+
+        return function() {
+            isMounted = false;
+        };
     }, []);
 
     async function handleSymbolChange(event) {
@@ -59,7 +94,7 @@ function Portfolio() {
             });
             setSuggestions(res.data);
             setShowSuggestions(true);
-        } catch (err) {
+        } catch {
             setSuggestions([]);
         }
     }
@@ -70,9 +105,6 @@ function Portfolio() {
         }
     }
 
-    // Demonstrating Closures in React Event Handlers:
-    // `handleBlur` creates an inner callback passed to `setTimeout`.
-    // The inner function retains a closure reference to `setShowSuggestions` from the enclosing React component scope.
     function handleBlur() {
         setTimeout(function() {
             setShowSuggestions(false);
@@ -114,7 +146,7 @@ function Portfolio() {
                 { headers: { Authorization: 'Bearer ' + token } }
             );
             loadPortfolio();
-        } catch(err) {
+        } catch {
             setError('Failed to remove stock.');
         }
     }

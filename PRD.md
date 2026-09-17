@@ -141,5 +141,6 @@ Two distinct prompt pipelines are implemented in `services/aiService.js`:
 
 - **Phase 4: DevOps & Engineering**
   - Add `concurrently` for unified `npm run dev` startup
-  - Document Event Loop, Hoisting, Closures, and Promises vs Callbacks in code
-  - Create SQL JOINs reference (`db/queries.sql`) alongside Mongoose `.populate()` relational queries
+  - Implement in-memory TTL caching and multi-provider fallback resilience
+  - Implement environment variable validation and secrets masking on startup
+

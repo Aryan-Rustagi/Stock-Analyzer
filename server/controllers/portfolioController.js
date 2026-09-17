@@ -1,34 +1,18 @@
 const Portfolio = require('../models/Portfolio');
 const { searchStock } = require('../services/stockService');
 
-// Helper demonstrating Promise constructor wrapping callback-style async operation (Promise vs Callback)
-function fetchStockWithPromise(symbol) {
-    return new Promise(function(resolve, reject) {
-        searchStock(symbol)
-            .then(function(data) {
-                resolve(data);
-            })
-            .catch(function(err) {
-                reject(err);
-            });
-    });
-}
-
-// Express route callback handler using (req, res, next) with async/await and Promise.all
 async function getPortfolio(req, res, next) {
     try {
-        // Relational data JOIN between Portfolio and User collections
         const stocks = await Portfolio.find({ user: req.user._id }).populate('user', 'name email');
         
-        // Parallel async resolution using Promise.all with async/await inside mapped function
         const portfolioWithPrices = await Promise.all(stocks.map(async function(stock) {
             try {
-                const stockData = await fetchStockWithPromise(stock.symbol);
+                const stockData = await searchStock(stock.symbol);
                 return {
                     ...stock.toObject(),
                     price: stockData.currentPrice
                 };
-            } catch (err) {
+            } catch {
                 return stock.toObject();
             }
         }));
