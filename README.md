@@ -5,14 +5,15 @@
 [![Node.js](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933.svg)](https://nodejs.org)
 [![Database](https://img.shields.io/badge/Database-MongoDB%20%7C%20Mongoose-47A248.svg)](https://www.mongodb.com)
 [![APIs](https://img.shields.io/badge/APIs-Finnhub%20%7C%20Alpha%20Vantage%20%7C%20Twelve%20Data-ff6600.svg)](https://finnhub.io)
+[![AI](https://img.shields.io/badge/AI-Groq%20%7C%20Llama%203.1-f55036.svg)](https://groq.com)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED.svg)](https://www.docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-brightgreen.svg)](https://stock-analyzer-mvyi.onrender.com/portfolio)
 
-An enterprise-grade, high-performance financial tracking dashboard built utilizing the decoupled MERN stack. Designed with a frosted glassmorphism interface, Stock Analyzer allows investors to monitor real-time stock quotes, visualize chronological price trends, manage customized watchlists, and query real-time market data securely. The backend employs a **multi-provider fallback system** (Finnhub → Alpha Vantage → Twelve Data) ensuring maximum uptime and resilience against API rate limits. The entire application is **fully containerized with Docker** for consistent, environment-independent deployment.
+An enterprise-grade, high-performance financial tracking dashboard built utilizing the decoupled MERN stack. Designed with a frosted glassmorphism interface, Stock Analyzer allows investors to monitor real-time stock quotes, visualize chronological price trends, obtain AI-driven stock insights via Groq LLM, manage customized watchlists, and query real-time market data securely. The backend employs a **multi-provider fallback system** (Finnhub → Alpha Vantage → Twelve Data) ensuring maximum uptime and resilience against API rate limits. The entire application is **fully containerized with Docker** for consistent, environment-independent deployment.
 
-* **Railway Deployment:** [https://stock-analyzer-production-497e.up.railway.app/](https://stock-analyzer-production-497e.up.railway.app/)
-* **Vercel Deployment:** [https://stock-analyzer-henna.vercel.app/](https://stock-analyzer-henna.vercel.app/)
-* **API Server Endpoint:** [https://stock-analyzer-api-n9mz.onrender.com](https://stock-analyzer-api-n9mz.onrender.com)
+* **Live URL:** [https://stock-analyzer-mvyi.onrender.com/portfolio](https://stock-analyzer-mvyi.onrender.com/portfolio)
+* **API Server Endpoint:** [https://stock-analyzer-mvyi.onrender.com](https://stock-analyzer-mvyi.onrender.com)
 
 ---
 
@@ -25,19 +26,20 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
            ▼             │
 [ API Gateway & Routing (Express + Cors) ]
            │             ▲
-           ▼             │ Mongoose ODM
-[ Business Logic & Security (BcryptJS / Multi-Provider Service) ]
-           │             │
-           ▼             ▼
-  [ MongoDB Atlas ]   [ Finnhub → Alpha Vantage → Twelve Data ]
-                        (automatic failover chain)
+           ▼             │ Mongoose ODM / Groq SDK
+[ Business Logic & Security (BcryptJS / Multi-Provider / Groq) ]
+      │                  │                            │
+      ▼                  ▼                            ▼
+[ MongoDB Atlas ]  [ Finnhub → Alpha Vantage ]  [ Groq Cloud LLM ]
+                   [     → Twelve Data       ]  (Llama 3.1 8B)
 ```
 
 1. **Authentication Flow:** Users register or log in. Server-side verification validates user credentials securely. Sessions are authorized via JSON Web Tokens, which are cached client-side.
 2. **Gateway Router:** API routing filters cross-origin (CORS) queries and applies JWT authorization checkpoints to secure user endpoints.
 3. **Live Search Suggestions:** User inputs trigger backend requests to search endpoints, querying ticker recommendations from global exchanges.
 4. **Stock Valuation & Metrics:** Fetched stocks populate detailed cards. Clicking "Load Historical Chart" generates interactive market charts based on one-month historical quote data.
-5. **Portfolio Compilation:** Ticker mappings are stored securely in MongoDB database records. During page load, the backend aggregates watchlist mappings with live valuation quotes asynchronously.
+5. **AI Financial Analysis:** Groq Cloud SDK executes prompt-engineered evaluation pipelines generating structured stock outlooks (sentiment, recommendations, risks).
+6. **Portfolio Compilation:** Ticker mappings are stored securely in MongoDB database records. During page load, the backend aggregates watchlist mappings with live valuation quotes asynchronously.
 
 ---
 
@@ -47,6 +49,8 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
 * **Auto-complete Query Engine:** Fast, query-responsive symbol matching search capabilities.
 * **Live Valuation Aggregator:** Real-time stock quote lookups (prices, exchange data, open/close, daily highs and lows, volume metrics).
 * **Interactive Chronological Charts:** One-month trend analysis powered by responsive data visualizer widgets.
+* **AI Stock Analysis:** Structured fundamental & sentiment evaluation powered by Groq LLM (`llama-3.1-8b-instant`) with clear investment takeaways, strengths, and risk breakdowns.
+* **AI Finance Assistant:** Embedded conversational interface offering contextual answers to stock queries and investing principles.
 * **Relational Watchlist Engine:** Personalized dashboards listing current assets with real-time price updates.
 * **Docker Containerization:** Full multi-service Docker setup for reproducible local and production deployments.
 
@@ -60,6 +64,7 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
 | **CORS** | Cross-Origin Middleware | Controls client access domains; restricts and regulates traffic from authorized local hosts. |
 | **BcryptJS** | Cryptographic Hashing | Secures passwords using salted one-way hashing algorithms prior to database storage. |
 | **Recharts** | Interactive Visualization | Renders dynamic SVG charts representing historical stock values, including customizable tooltip cards. |
+| **Groq Cloud API** | AI Inference Engine | Powers real-time financial Q&A and structured stock sentiment analysis using Llama 3.1. |
 | **Finnhub API** | Primary Data Provider | Serves stock quotes (`/quote`), search suggestions (`/search`), and historical candle data (`/stock/candle`). |
 | **Alpha Vantage API** | Secondary Fallback | Provides `GLOBAL_QUOTE`, `SYMBOL_SEARCH`, and `TIME_SERIES_DAILY` endpoints when Finnhub is rate-limited. |
 | **Twelve Data API** | Tertiary Fallback | Supplies `/quote`, `/symbol_search`, and `/time_series` endpoints as final fallback provider. |
@@ -79,6 +84,10 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
 * `GET /api/stock/suggestions/search?q=:query` — Fetch ticker autocomplete recommendations.
 * `GET /api/stock/:symbol` — Retrieve real-time market quote metrics.
 * `GET /api/stock/:symbol/history` — Retrieve monthly market close price history.
+
+### AI Insights Endpoints (JWT Protected)
+* `GET /api/ai/analyze/:symbol` — Generate structured AI stock analysis (sentiment, recommendation, strengths, risks).
+* `POST /api/ai/chat` — Contextual finance assistant conversational Q&A endpoint.
 
 ### Portfolio Endpoints (JWT Protected)
 * `GET /api/portfolio` — Fetch user's saved watchlist complete with current live quotes.
@@ -109,6 +118,7 @@ The fastest way to run the full stack locally.
    PORT=5000
    MONGO_URI=your_mongodb_connection_string
    JWT_SECRET=your_jwt_secret_signing_key
+   GROQ_API_KEY=your_groq_api_key
    FINNHUB_API_KEY=your_finnhub_api_token
    ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
    TWELVE_DATA_API_KEY=your_twelve_data_api_key
@@ -142,6 +152,7 @@ docker compose down
    PORT=5000
    MONGO_URI=your_mongodb_connection_string
    JWT_SECRET=your_jwt_secret_signing_key
+   GROQ_API_KEY=your_groq_api_key
    FINNHUB_API_KEY=your_finnhub_api_token
    ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
    TWELVE_DATA_API_KEY=your_twelve_data_api_key
