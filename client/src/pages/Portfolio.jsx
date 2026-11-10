@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +24,7 @@ function Toast({ message, onUndo, onDismiss }) {
 
 function Portfolio() {
     const { token } = useAuth();
+    const navigate = useNavigate();
     const [stock, setStock] = useState([]);
     const [symbol, setSymbol] = useState('');
     const [error, setError] = useState('');
@@ -283,7 +285,13 @@ function Portfolio() {
                         // Issue 4 fix: show day change with correct green/red coloring
                         const isPositive = item.change !== undefined ? item.change >= 0 : null;
                         return (
-                            <div key={item._id} className="card portfolio-card">
+                            <div
+                                key={item._id}
+                                className="card portfolio-card"
+                                style={{ cursor: 'pointer' }}
+                                onClick={function() { navigate('/searchstock?symbol=' + encodeURIComponent(item.symbol)); }}
+                                title={`Click to view chart and AI analysis for ${item.symbol}`}
+                            >
                                 <div className="stock-row">
                                     <div>
                                         <h3 style={{margin: 0}}>{item.symbol}</h3>
@@ -294,7 +302,8 @@ function Portfolio() {
                                     <div style={{textAlign: 'right'}}>
                                         {item.price !== undefined && item.price !== null && (
                                             <span className="stock-price" style={{
-                                                color: isPositive === null ? 'var(--text)' : isPositive ? 'var(--green)' : 'var(--red)'
+                                                color: isPositive === null ? 'var(--text)' : isPositive ? 'var(--green)' : 'var(--red)',
+                                                fontVariantNumeric: 'tabular-nums'
                                             }}>
                                                 {item.currency === 'INR' ? '₹' : '$'}{item.price.toFixed(2)}
                                             </span>
@@ -303,11 +312,12 @@ function Portfolio() {
                                         {item.change !== undefined && item.change !== null && (
                                             <div style={{
                                                 fontSize: '0.75rem',
-                                                fontWeight: 500,
+                                                fontWeight: 600,
                                                 color: isPositive ? 'var(--green)' : 'var(--red)',
+                                                fontVariantNumeric: 'tabular-nums',
                                                 marginTop: '0.1rem'
                                             }}>
-                                                {isPositive ? '+' : ''}{item.change.toFixed(2)}
+                                                {isPositive ? '▲ +' : '▼ '}{item.change.toFixed(2)}
                                                 {item.changePercent !== undefined && (
                                                     <> ({isPositive ? '+' : ''}{item.changePercent.toFixed(2)}%)</>
                                                 )}
@@ -315,13 +325,21 @@ function Portfolio() {
                                         )}
                                     </div>
                                 </div>
-                                <button
-                                    className="btn-danger"
-                                    onClick={function() { handleRemove(item._id); }}
-                                    disabled={removingId === item._id}
-                                >
-                                    {removingId === item._id ? 'Removing...' : 'Remove'}
-                                </button>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                                        View chart & AI →
+                                    </span>
+                                    <button
+                                        className="btn-danger"
+                                        onClick={function(e) {
+                                            e.stopPropagation();
+                                            handleRemove(item._id);
+                                        }}
+                                        disabled={removingId === item._id}
+                                    >
+                                        {removingId === item._id ? 'Removing...' : 'Remove'}
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}

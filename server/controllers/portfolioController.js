@@ -12,7 +12,10 @@ async function getPortfolio(req, res, next) {
                 return {
                     ...stock.toObject(),
                     price: stockData.currentPrice,
-                    currency: stockData.currency || 'USD'
+                    currency: stockData.currency || 'USD',
+                    change: stockData.change,
+                    changePercent: stockData.changePercent,
+                    companyName: stockData.companyName
                 };
             } catch {
                 return stock.toObject();
