@@ -8,8 +8,15 @@ const portfolioSchema = new mongoose.Schema({
     },
     symbol: {
         type: String,
-        required: true
+        required: true,
+        uppercase: true,
+        trim: true
     }
+}, {
+    timestamps: true
 });
+
+// Ensure a user cannot add duplicate symbols
+portfolioSchema.index({ user: 1, symbol: 1 }, { unique: true });
 
 module.exports = mongoose.model('Portfolio', portfolioSchema);

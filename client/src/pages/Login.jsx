@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { useAuth } from '../context/AuthContext';
 
 function Login() {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     function handleEmailChange(event) {
         setEmail(event.target.value);
@@ -30,18 +33,20 @@ function Login() {
         }
 
         setError('');
+        setLoading(true);
 
         try {
             const response = await axios.post(API_BASE_URL + '/api/auth/login', {
-                email: email,
+                email: email.trim(),
                 password: password
             });
 
-            localStorage.setItem('token', response.data.token);
+            login(response.data.token);
             navigate('/dashboard');
-            window.location.reload();
         } catch(err) {
             setError(err.response?.data?.message || 'Login failed. Please try again.');
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -61,6 +66,7 @@ function Login() {
                             placeholder="you@example.com"
                             value={email}
                             onChange={handleEmailChange}
+                            disabled={loading}
                         />
                     </div>
 
@@ -73,10 +79,18 @@ function Login() {
                             placeholder="Your password"
                             value={password}
                             onChange={handlePasswordChange}
+                            disabled={loading}
                         />
                     </div>
 
-                    <button type="submit" className="btn-primary" style={{width: "100%", marginTop: "0.5rem"}}>Sign in</button>
+                    <button 
+                        type="submit" 
+                        className="btn-primary" 
+                        style={{width: "100%", marginTop: "0.5rem"}}
+                        disabled={loading}
+                    >
+                        {loading ? 'Signing in...' : 'Sign in'}
+                    </button>
                 </form>
 
                 {error && <p className="auth-error">{error}</p>}

@@ -1,30 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { useAuth } from '../context/AuthContext';
 
 function Portfolio() {
+    const { token } = useAuth();
     const [stock, setStock] = useState([]);
     const [symbol, setSymbol] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
+    const [removingId, setRemovingId] = useState(null);
 
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
-
-    const token = localStorage.getItem('token');
+    const debounceTimerRef = useRef(null);
 
     async function loadPortfolio() {
-        const currentToken = localStorage.getItem('token');
-        if (!currentToken) {
-            setError('Please log in to view your portfolio.');
-            setLoading(false);
-            return;
-        }
-
+        if (!token) return;
         try {
             const response = await axios.get(
                 API_BASE_URL + '/api/portfolio',
-                { headers: { Authorization: 'Bearer ' + currentToken } }
+                { headers: { Authorization: 'Bearer ' + token } }
             );
             setStock(response.data);
             setError('');
@@ -39,30 +36,23 @@ function Portfolio() {
         }
     }
 
-    useEffect(function() {
+    useEffect(() => {
         let isMounted = true;
-        const currentToken = localStorage.getItem('token');
-        if (!currentToken) {
-            Promise.resolve().then(() => {
-                if (isMounted) {
-                    setError('Please log in to view your portfolio.');
-                    setLoading(false);
-                }
-            });
+        if (!token) {
             return;
         }
 
         axios.get(API_BASE_URL + '/api/portfolio', {
-            headers: { Authorization: 'Bearer ' + currentToken }
+            headers: { Authorization: 'Bearer ' + token }
         })
-        .then(function(res) {
+        .then(response => {
             if (isMounted) {
-                setStock(res.data);
+                setStock(response.data);
                 setError('');
                 setLoading(false);
             }
         })
-        .catch(function(err) {
+        .catch(err => {
             if (isMounted) {
                 if (err.response?.status === 401) {
                     setError('Session expired or unauthorized. Please log in again.');
@@ -73,30 +63,32 @@ function Portfolio() {
             }
         });
 
-        return function() {
-            isMounted = false;
-        };
-    }, []);
+        return () => { isMounted = false; };
+    }, [token]);
 
-    async function handleSymbolChange(event) {
+    function handleSymbolChange(event) {
         const newSymbol = event.target.value;
         setSymbol(newSymbol);
 
-        if (newSymbol === '') {
+        if (!newSymbol.trim()) {
             setSuggestions([]);
             setShowSuggestions(false);
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
             return;
         }
 
-        try {
-            const res = await axios.get(API_BASE_URL + '/api/stock/suggestions/search?q=' + newSymbol, {
-                headers: { Authorization: 'Bearer ' + token }
-            });
-            setSuggestions(res.data);
-            setShowSuggestions(true);
-        } catch {
-            setSuggestions([]);
-        }
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await axios.get(API_BASE_URL + '/api/stock/suggestions/search?q=' + encodeURIComponent(newSymbol.trim()), {
+                    headers: { Authorization: 'Bearer ' + token }
+                });
+                setSuggestions(res.data);
+                setShowSuggestions(true);
+            } catch {
+                setSuggestions([]);
+            }
+        }, 200);
     }
 
     function handleFocus() {
@@ -119,35 +111,49 @@ function Portfolio() {
     async function handleAdd(event) {
         event.preventDefault();
 
-        if (symbol === '') {
+        if (!symbol.trim() || isAdding) {
             return;
         }
+
+        setIsAdding(true);
+        setError('');
 
         try {
             await axios.post(
                 API_BASE_URL + '/api/portfolio/add',
-                { symbol: symbol.toUpperCase() },
+                { symbol: symbol.trim().toUpperCase() },
                 { headers: { Authorization: 'Bearer ' + token } }
             );
 
             setSymbol('');
             setSuggestions([]);
-            setError('');
-            loadPortfolio();
+            setShowSuggestions(false);
+            await loadPortfolio();
         } catch(err) {
             setError(err.response?.data?.message || 'Failed to add stock.');
+        } finally {
+            setIsAdding(false);
         }
     }
 
+    // Instant optimistic removal for zero latency
     async function handleRemove(id) {
+        if (removingId) return;
+        setRemovingId(id);
+
+        const previousStocks = [...stock];
+        setStock(prev => prev.filter(item => item._id !== id));
+
         try {
             await axios.delete(
                 API_BASE_URL + '/api/portfolio/' + id,
                 { headers: { Authorization: 'Bearer ' + token } }
             );
-            loadPortfolio();
         } catch {
+            setStock(previousStocks); // rollback if failed
             setError('Failed to remove stock.');
+        } finally {
+            setRemovingId(null);
         }
     }
 
@@ -167,10 +173,13 @@ function Portfolio() {
                         onChange={handleSymbolChange}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
-                        placeholder="Add a symbol, e.g. AAPL"
+                        placeholder="Add a symbol, e.g. AAPL, RELIANCE, TCS"
                         style={{flex: 1}}
+                        disabled={isAdding}
                     />
-                    <button type="submit" className="btn-primary">Add</button>
+                    <button type="submit" className="btn-primary" disabled={isAdding || !symbol.trim()}>
+                        {isAdding ? 'Adding...' : 'Add'}
+                    </button>
                 </form>
 
                 {showSuggestions && suggestions.length > 0 && (
@@ -210,12 +219,18 @@ function Portfolio() {
                             <div key={item._id} className="card portfolio-card">
                                 <div className="stock-row">
                                     <h3>{item.symbol}</h3>
-                                    {item.price && (
-                                        <span className="stock-price">${item.price.toFixed(2)}</span>
+                                    {item.price !== undefined && item.price !== null && (
+                                        <span className="stock-price">
+                                            {item.currency === 'INR' ? '₹' : '$'}{item.price.toFixed(2)}
+                                        </span>
                                     )}
                                 </div>
-                                <button className="btn-danger" onClick={function() { handleRemove(item._id); }}>
-                                    Remove
+                                <button 
+                                    className="btn-danger" 
+                                    onClick={function() { handleRemove(item._id); }}
+                                    disabled={removingId === item._id}
+                                >
+                                    {removingId === item._id ? 'Removing...' : 'Remove'}
                                 </button>
                             </div>
                         );

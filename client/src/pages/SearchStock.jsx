@@ -51,9 +51,12 @@ function SearchStock() {
     }
 
     async function executeSearch(searchSymbol) {
+        if (!searchSymbol || !searchSymbol.trim()) return;
+        const clean = searchSymbol.trim().toUpperCase();
+
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(API_BASE_URL + '/api/stock/' + searchSymbol, {
+            const res = await axios.get(API_BASE_URL + '/api/stock/' + clean, {
                 headers: { Authorization: 'Bearer ' + token }
             });
             setStockData(res.data);
@@ -63,7 +66,11 @@ function SearchStock() {
             setAiAnalysis(null);
             setAiError('');
         } catch(err) {
-            setError(err.response?.data?.message || "Failed to fetch stock data.");
+            if (!err.response) {
+                setError("Unable to connect to the backend server. Please verify the server is running on port 5000.");
+            } else {
+                setError(err.response?.data?.message || `Failed to fetch stock data for ${clean}.`);
+            }
             setStockData(null);
         }
     }
@@ -109,7 +116,7 @@ function SearchStock() {
         <div className="fade-in">
             <div className="page-header">
                 <h1>Search</h1>
-                <p>Look up any stock to view live market data. <strong>Note: Only US stock data is available.</strong></p>
+                <p>Look up US or Indian (NSE/BSE) stocks to view live market data, AI analysis, and historical charts.</p>
             </div>
 
             <div className="search-wrapper">
@@ -121,7 +128,7 @@ function SearchStock() {
                         onChange={handleSymbolChange}
                         onFocus={function() { setShowSuggestions(true); }}
                         onBlur={function() { setTimeout(function() { setShowSuggestions(false); }, 200); }}
-                        placeholder="Enter a symbol, e.g. AAPL"
+                        placeholder="Enter a symbol, e.g. AAPL, RELIANCE, TCS"
                         style={{flex: 1}}
                     />
                     <button type="submit" className="btn-primary">Search</button>
@@ -156,7 +163,8 @@ function SearchStock() {
                         </div>
                         <div style={{textAlign: "right"}}>
                             <div className="stock-price-main">
-                                {stockData.currency} {stockData.currentPrice ? stockData.currentPrice.toFixed(2) : 'N/A'}
+                                {stockData.currency === 'INR' ? '₹' : (stockData.currency || '$')}{' '}
+                                {stockData.currentPrice ? (stockData.currency === 'INR' ? stockData.currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : stockData.currentPrice.toFixed(2)) : 'N/A'}
                             </div>
                             <span className="stock-badge">{stockData.marketState}</span>
                         </div>
@@ -165,23 +173,33 @@ function SearchStock() {
                     <div className="stock-grid">
                         <div className="stock-stat-box">
                             <span className="stock-stat-label">Prev. Close</span>
-                            <span className="stock-stat-value">{stockData.previousClose?.toFixed(2)}</span>
+                            <span className="stock-stat-value">
+                                {stockData.currency === 'INR' ? '₹' : '$'}{stockData.previousClose ? stockData.previousClose.toFixed(2) : '0.00'}
+                            </span>
                         </div>
                         <div className="stock-stat-box">
                             <span className="stock-stat-label">Open</span>
-                            <span className="stock-stat-value">{stockData.open?.toFixed(2)}</span>
+                            <span className="stock-stat-value">
+                                {stockData.currency === 'INR' ? '₹' : '$'}{stockData.open ? stockData.open.toFixed(2) : '0.00'}
+                            </span>
                         </div>
                         <div className="stock-stat-box">
-                            <span className="stock-stat-label">High</span>
-                            <span className="stock-stat-value">{stockData.high?.toFixed(2)}</span>
+                            <span className="stock-stat-label">Day High</span>
+                            <span className="stock-stat-value">
+                                {stockData.currency === 'INR' ? '₹' : '$'}{stockData.high ? stockData.high.toFixed(2) : '0.00'}
+                            </span>
                         </div>
                         <div className="stock-stat-box">
-                            <span className="stock-stat-label">Low</span>
-                            <span className="stock-stat-value">{stockData.low?.toFixed(2)}</span>
+                            <span className="stock-stat-label">Day Low</span>
+                            <span className="stock-stat-value">
+                                {stockData.currency === 'INR' ? '₹' : '$'}{stockData.low ? stockData.low.toFixed(2) : '0.00'}
+                            </span>
                         </div>
                         <div className="stock-stat-box">
                             <span className="stock-stat-label">Volume</span>
-                            <span className="stock-stat-value">{stockData.volume?.toLocaleString()}</span>
+                            <span className="stock-stat-value">
+                                {stockData.volume ? stockData.volume.toLocaleString() : 'N/A'}
+                            </span>
                         </div>
                     </div>
 
