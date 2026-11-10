@@ -15,6 +15,8 @@ const stockRoutes = require('./routes/stockRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 
+const { createRateLimiter } = require('./middleware/rateLimiter');
+
 // Validate environment variables & masked secrets on server startup
 validateEnvironment();
 
@@ -26,11 +28,23 @@ const indexHtmlPath = path.join(clientBuildPath, 'index.html');
 app.use(cors());
 app.use(express.json());
 
+// Security Rate Limiters
+const authLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: 'Too many authentication attempts. Please try again after 15 minutes.'
+});
+const aiLimiter = createRateLimiter({
+    windowMs: 60 * 1000,
+    max: 30,
+    message: 'Too many AI requests. Please wait a moment before trying again.'
+});
+
 // API Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/portfolio', portfolioRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
 
 // Health check endpoint
 app.get('/health', function(req, res) {
