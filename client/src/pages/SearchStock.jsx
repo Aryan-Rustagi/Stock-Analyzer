@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,23 +8,114 @@ import {
 import { API_BASE_URL } from '../config';
 import { useClickOutside } from '../hooks/useClickOutside';
 
-// Smooth custom cursor dot rendered by Recharts activeDot
+// ---------------------------------------------------------------------------
+// Quick-pick stock lists (no backend calls needed to show these)
+// ---------------------------------------------------------------------------
+const POPULAR_US = [
+    { symbol: 'AAPL', name: 'Apple' },
+    { symbol: 'MSFT', name: 'Microsoft' },
+    { symbol: 'NVDA', name: 'Nvidia' },
+    { symbol: 'GOOGL', name: 'Alphabet' },
+    { symbol: 'AMZN', name: 'Amazon' },
+    { symbol: 'TSLA', name: 'Tesla' },
+];
+
+const POPULAR_IN = [
+    { symbol: 'RELIANCE', name: 'Reliance Industries' },
+    { symbol: 'TCS', name: 'Tata Consultancy' },
+    { symbol: 'INFY', name: 'Infosys' },
+    { symbol: 'HDFCBANK', name: 'HDFC Bank' },
+    { symbol: 'ICICIBANK', name: 'ICICI Bank' },
+    { symbol: 'TATAMOTORS', name: 'Tata Motors' },
+];
+
+const PLACEHOLDERS = [
+    'AAPL · RELIANCE · TCS · MSFT',
+    'NVDA · INFY · TSLA · HDFCBANK',
+    'GOOGL · TATAMOTORS · AMZN',
+    'Search any US or Indian (NSE/BSE) ticker...'
+];
+
+const RECENT_KEY = 'sa_recent_searches';
+
+function loadRecent() {
+    try {
+        const raw = localStorage.getItem(RECENT_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveRecent(list) {
+    try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 6)));
+    } catch {
+        // silent
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Live Market Status (calculated from local time in IST & EST)
+// ---------------------------------------------------------------------------
+function getMarketStatus() {
+    const now = new Date();
+
+    // NSE/BSE: Mon-Fri 09:15 - 15:30 IST (UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(now.getTime() + istOffset + now.getTimezoneOffset() * 60 * 1000);
+    const istDay = istTime.getDay(); // 0 = Sun, 6 = Sat
+    const istMinutes = istTime.getHours() * 60 + istTime.getMinutes();
+    const nseOpen = istDay >= 1 && istDay <= 5 && istMinutes >= 9 * 60 + 15 && istMinutes < 15 * 60 + 30;
+
+    // NYSE/NASDAQ: Mon-Fri 09:30 - 16:00 EST (UTC-5:00 / UTC-4:00 EDT)
+    // Simplified EST: UTC-5
+    const estOffset = -5 * 60 * 60 * 1000;
+    const estTime = new Date(now.getTime() + estOffset + now.getTimezoneOffset() * 60 * 1000);
+    const estDay = estTime.getDay();
+    const estMinutes = estTime.getHours() * 60 + estTime.getMinutes();
+    const nyseOpen = estDay >= 1 && estDay <= 5 && estMinutes >= 9 * 60 + 30 && estMinutes < 16 * 60;
+
+    return { nseOpen, nyseOpen };
+}
+
+function MarketBadge({ name, isOpen }) {
+    return (
+        <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            padding: '0.25rem 0.65rem',
+            borderRadius: '999px',
+        }}>
+            <span style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: isOpen ? 'var(--green)' : 'var(--red)',
+                display: 'inline-block',
+                boxShadow: isOpen ? '0 0 6px rgba(34,197,94,0.6)' : 'none',
+            }} />
+            <strong style={{ color: 'var(--text)', fontWeight: 600 }}>{name}</strong>
+            <span>{isOpen ? 'Open' : 'Closed'}</span>
+        </span>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Chart section
+// ---------------------------------------------------------------------------
 function ChartDot({ cx, cy }) {
     return (
-        <circle
-            cx={cx}
-            cy={cy}
-            r={4}
-            fill="#fafafa"
-            stroke="#0A0A0A"
-            strokeWidth={2}
-        />
+        <circle cx={cx} cy={cy} r={4} fill="#fafafa" stroke="#0A0A0A" strokeWidth={2} />
     );
 }
 
 function ChartSection({ historyData, currency }) {
-    // Derive a stable key from data identity — no setState-in-effect needed
-    // Each new historyData array reference triggers a fresh Recharts mount + animation
     const chartKey = historyData ? historyData.length + (historyData[0]?.date || '') : 0;
 
     function formatDate(dateStr) {
@@ -52,7 +143,6 @@ function ChartSection({ historyData, currency }) {
             <h3>30-Day Price History</h3>
             <div style={{ width: '100%', height: 300 }}>
                 <ResponsiveContainer>
-                    {/* key forces a fresh mount = fresh animation */}
                     <LineChart key={chartKey} data={historyData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
                         <XAxis
@@ -99,8 +189,6 @@ function ChartSection({ historyData, currency }) {
                             strokeWidth={1.75}
                             dot={false}
                             activeDot={<ChartDot />}
-                            // Recharts built-in animation is decent but we
-                            // control timing to make it feel deliberate
                             isAnimationActive={true}
                             animationDuration={900}
                             animationEasing="ease-out"
@@ -113,7 +201,7 @@ function ChartSection({ historyData, currency }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main component
+// Main SearchStock Page
 // ---------------------------------------------------------------------------
 function SearchStock() {
     const [symbol, setSymbol] = useState('');
@@ -128,8 +216,22 @@ function SearchStock() {
     const [aiAnalysis, setAiAnalysis] = useState(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState('');
+    const [recentSearches, setRecentSearches] = useState(loadRecent);
+    const [placeholderIdx, setPlaceholderIdx] = useState(0);
 
-    // Fix #1: click-outside instead of onBlur setTimeout
+    const { nseOpen, nyseOpen } = useMemo(function () {
+        return getMarketStatus();
+    }, []);
+
+    // Rotate placeholder text every 3s to hint supported formats
+    useEffect(function () {
+        const timer = setInterval(function () {
+            setPlaceholderIdx(function (prev) { return (prev + 1) % PLACEHOLDERS.length; });
+        }, 3000);
+        return function () { clearInterval(timer); };
+    }, []);
+
+    // Click-outside — no onBlur setTimeout
     const wrapperRef = useRef(null);
     const closeSuggestions = useCallback(function () {
         setShowSuggestions(false);
@@ -138,8 +240,6 @@ function SearchStock() {
     useClickOutside(wrapperRef, closeSuggestions);
 
     useEffect(function () {
-        // If symbol is empty, the suggestions clear happens in handleSymbolChange
-        // to avoid setState-in-effect lint warning
         if (!symbol.trim()) return;
 
         const id = setTimeout(async function () {
@@ -153,7 +253,7 @@ function SearchStock() {
                 setSuggestions(res.data);
                 setActiveIndex(-1);
             } catch {
-                // silent — suggestions are a convenience, not critical
+                // silent
             }
         }, 300);
         return function () { clearTimeout(id); };
@@ -170,7 +270,6 @@ function SearchStock() {
         }
     }
 
-    // Fix #2: keyboard navigation for autocomplete
     function handleKeyDown(e) {
         if (!showSuggestions || suggestions.length === 0) return;
         if (e.key === 'ArrowDown') {
@@ -196,6 +295,14 @@ function SearchStock() {
     async function executeSearch(searchSymbol) {
         if (!searchSymbol?.trim()) return;
         const clean = searchSymbol.trim().toUpperCase();
+
+        // Push into recent searches
+        setRecentSearches(function (prev) {
+            const next = [clean, ...prev.filter(function (s) { return s !== clean; })].slice(0, 6);
+            saveRecent(next);
+            return next;
+        });
+
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(API_BASE_URL + '/api/stock/' + clean, {
@@ -217,13 +324,26 @@ function SearchStock() {
         }
     }
 
+    function handleChipClick(sym) {
+        setSymbol(sym);
+        executeSearch(sym);
+    }
+
+    function handleRemoveRecent(sym, e) {
+        e.stopPropagation();
+        setRecentSearches(function (prev) {
+            const next = prev.filter(function (s) { return s !== sym; });
+            saveRecent(next);
+            return next;
+        });
+    }
+
     async function handleSubmit(e) {
         e.preventDefault();
         closeSuggestions();
         if (symbol.trim()) executeSearch(symbol);
     }
 
-    // Fix #6: chart loading state + toggle
     async function loadChart() {
         setChartLoading(true);
         try {
@@ -266,7 +386,7 @@ function SearchStock() {
                 <p>Look up US or Indian (NSE/BSE) stocks to view live market data, AI analysis, and historical charts.</p>
             </div>
 
-            {/* Fix #1: wrapperRef for click-outside — no setTimeout onBlur */}
+            {/* Search Box */}
             <div className="search-wrapper" ref={wrapperRef}>
                 <form onSubmit={handleSubmit} className="search-container">
                     <input
@@ -276,7 +396,7 @@ function SearchStock() {
                         onChange={handleSymbolChange}
                         onFocus={function () { if (suggestions.length > 0) setShowSuggestions(true); }}
                         onKeyDown={handleKeyDown}
-                        placeholder="AAPL · RELIANCE · TCS · MSFT"
+                        placeholder={PLACEHOLDERS[placeholderIdx]}
                         style={{ flex: 1 }}
                         aria-autocomplete="list"
                         aria-expanded={showSuggestions && suggestions.length > 0}
@@ -317,6 +437,161 @@ function SearchStock() {
                 </AnimatePresence>
             </div>
 
+            {/* Market status pills — gives the page a live terminal feel */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '0.75rem',
+                flexWrap: 'wrap',
+                marginTop: '-1.5rem',
+                marginBottom: '2rem',
+            }}>
+                <MarketBadge name="NYSE / NASDAQ" isOpen={nyseOpen} />
+                <MarketBadge name="NSE / BSE" isOpen={nseOpen} />
+            </div>
+
+            {/* ---------------------------------------------------------------- */}
+            {/* Empty state: shows Popular & Recent when no search is active    */}
+            {/* ---------------------------------------------------------------- */}
+            {!stockData && !error && (
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}
+                >
+                    {/* Recent searches */}
+                    {recentSearches.length > 0 && (
+                        <div>
+                            <span style={{
+                                fontSize: '0.72rem',
+                                color: 'var(--text-muted)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                display: 'block',
+                                marginBottom: '0.6rem',
+                            }}>
+                                Recent Searches
+                            </span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                {recentSearches.map(function (s) {
+                                    return (
+                                        <button
+                                            key={s}
+                                            onClick={function () { handleChipClick(s); }}
+                                            className="chip"
+                                        >
+                                            <span>{s}</span>
+                                            <span
+                                                onClick={function (e) { handleRemoveRecent(s, e); }}
+                                                className="chip-remove"
+                                                aria-label="Remove from recent"
+                                            >
+                                                ×
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Popular US stocks */}
+                    <div>
+                        <span style={{
+                            fontSize: '0.72rem',
+                            color: 'var(--text-muted)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            display: 'block',
+                            marginBottom: '0.6rem',
+                        }}>
+                            Popular US
+                        </span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            {POPULAR_US.map(function (s) {
+                                return (
+                                    <button
+                                        key={s.symbol}
+                                        onClick={function () { handleChipClick(s.symbol); }}
+                                        className="chip"
+                                    >
+                                        <strong>{s.symbol}</strong>
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{s.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Popular Indian stocks */}
+                    <div>
+                        <span style={{
+                            fontSize: '0.72rem',
+                            color: 'var(--text-muted)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            display: 'block',
+                            marginBottom: '0.6rem',
+                        }}>
+                            Popular Indian (NSE)
+                        </span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            {POPULAR_IN.map(function (s) {
+                                return (
+                                    <button
+                                        key={s.symbol}
+                                        onClick={function () { handleChipClick(s.symbol); }}
+                                        className="chip"
+                                    >
+                                        <strong>{s.symbol}</strong>
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{s.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Search Format & Capability Hints */}
+                    <div style={{ marginTop: '0.5rem' }}>
+                        <span style={{
+                            fontSize: '0.72rem',
+                            color: 'var(--text-muted)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            display: 'block',
+                            marginBottom: '0.6rem',
+                        }}>
+                            Market Coverage
+                        </span>
+                        <div className="search-hints-grid">
+                            <div className="search-hint-item">
+                                <div className="search-hint-header">
+                                    <span className="search-hint-icon">🇺🇸</span>
+                                    <span>US Equities</span>
+                                </div>
+                                <p>Real-time pricing in USD via Finnhub with live market status.</p>
+                            </div>
+                            <div className="search-hint-item">
+                                <div className="search-hint-header">
+                                    <span className="search-hint-icon">🇮🇳</span>
+                                    <span>Indian NSE / BSE</span>
+                                </div>
+                                <p>Live quotes in ₹ INR with day open, high, low, and 30-day historical data.</p>
+                            </div>
+                            <div className="search-hint-item">
+                                <div className="search-hint-header">
+                                    <span className="search-hint-icon">✦</span>
+                                    <span>AI Analysis</span>
+                                </div>
+                                <p>Instant sentiment ratings, buy/sell recommendations, and key risks.</p>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Error Message */}
             <AnimatePresence>
                 {error && (
                     <motion.p
@@ -331,6 +606,7 @@ function SearchStock() {
                 )}
             </AnimatePresence>
 
+            {/* Stock Detail Card */}
             <AnimatePresence>
                 {stockData && (
                     <motion.div
@@ -353,7 +629,6 @@ function SearchStock() {
                                             : stockData.currentPrice.toFixed(2)
                                         : 'N/A'}
                                 </div>
-                                {/* Fix #4: color-coded day change */}
                                 {stockData.change !== undefined && stockData.change !== null && (
                                     <div style={{
                                         fontSize: '0.85rem',
@@ -399,7 +674,7 @@ function SearchStock() {
                             </div>
                         </div>
 
-                        {/* Fix #6: chart controls */}
+                        {/* Chart controls */}
                         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
                             {!historyData && !chartLoading && (
                                 <button onClick={loadChart} className="btn-secondary">
@@ -421,7 +696,7 @@ function SearchStock() {
                             )}
                         </div>
 
-                        {/* Framer-animated chart mount/unmount */}
+                        {/* Chart */}
                         <AnimatePresence>
                             {showChart && historyData && (
                                 <ChartSection historyData={historyData} currency={stockData.currency} />
