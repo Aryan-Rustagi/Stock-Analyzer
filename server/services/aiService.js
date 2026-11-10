@@ -1,7 +1,25 @@
 const Groq = require('groq-sdk');
+const { createInMemoryCache } = require('../utils/cache');
+
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
+
+// Fast in-memory caches for AI outputs (avoids repeating slow LLM calls)
+const aiAnalysisCache = createInMemoryCache(15 * 60 * 1000); // 15 minutes
+const aiChatCache = createInMemoryCache(30 * 60 * 1000);     // 30 minutes
+
+let groqClient = null;
+function getGroqClient() {
+    if (!groqClient) {
+        if (!process.env.GROQ_API_KEY) {
+            throw new Error('GROQ_API_KEY is not configured in environment variables');
+        }
+        groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    }
+    return groqClient;
+}
 
 // Structured output schema that the LLM must conform to (prompt engineering via schema definition)
-var ANALYSIS_SCHEMA = {
+const ANALYSIS_SCHEMA = {
     sentiment: 'one of: Bullish | Neutral | Bearish',
     summary: 'A 2-3 sentence plain-English analysis of the stock',
     strengths: 'array of exactly 2 short strength point strings',
@@ -9,7 +27,6 @@ var ANALYSIS_SCHEMA = {
     recommendation: 'one of: Buy | Hold | Sell'
 };
 
-// System prompt template — defines the AI role, output format rules, and JSON schema (prompt engineering)
 function buildSystemPrompt() {
     return [
         'You are a professional stock market analyst AI assistant.',
@@ -28,48 +45,50 @@ function buildSystemPrompt() {
     ].join('\n');
 }
 
-// Dynamic user prompt — constructed at runtime from real stock data (prompt engineering)
 function buildUserPrompt(stockData) {
-    var changePercent = '0.00';
+    let changePercent = '0.00';
     if (stockData.previousClose && stockData.previousClose !== 0) {
         changePercent = ((stockData.currentPrice - stockData.previousClose) / stockData.previousClose * 100).toFixed(2);
     }
+    const currency = stockData.currency || 'USD';
 
     return [
         'Analyze this stock and return ONLY a JSON object matching the required schema:',
         '',
         'Symbol: ' + stockData.symbol,
         'Company: ' + (stockData.companyName || stockData.symbol),
-        'Current Price: $' + stockData.currentPrice,
-        'Previous Close: $' + stockData.previousClose,
+        'Exchange: ' + (stockData.exchange || 'Market'),
+        'Current Price: ' + currency + ' ' + stockData.currentPrice,
+        'Previous Close: ' + currency + ' ' + stockData.previousClose,
         'Day Change: ' + changePercent + '%',
-        'Open: $' + stockData.open,
-        'Day High: $' + stockData.high,
-        'Day Low: $' + stockData.low,
+        'Open: ' + currency + ' ' + stockData.open,
+        'Day High: ' + currency + ' ' + stockData.high,
+        'Day Low: ' + currency + ' ' + stockData.low,
         'Volume: ' + stockData.volume
     ].join('\n');
 }
 
-// Parse and validate the structured JSON output from the LLM
 function parseStructuredOutput(rawText) {
-    var cleaned = rawText.trim();
+    let cleaned = rawText.trim();
 
-    // Strip any accidental markdown code fences
     cleaned = cleaned.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
 
-    var parsed;
+    let parsed;
     try {
         parsed = JSON.parse(cleaned);
     } catch (e) {
         throw new Error('LLM returned invalid JSON: ' + rawText.slice(0, 200));
     }
 
-    // Validate and normalise required fields
-    var validSentiments = ['Bullish', 'Neutral', 'Bearish'];
-    var validRecommendations = ['Buy', 'Hold', 'Sell'];
+    const validSentiments = ['Bullish', 'Neutral', 'Bearish'];
+    const validRecommendations = ['Buy', 'Hold', 'Sell'];
 
-    if (!validSentiments.includes(parsed.sentiment)) { parsed.sentiment = 'Neutral'; }
-    if (!validRecommendations.includes(parsed.recommendation)) { parsed.recommendation = 'Hold'; }
+    const matchedSentiment = validSentiments.find(s => s.toLowerCase() === String(parsed.sentiment).toLowerCase());
+    parsed.sentiment = matchedSentiment || 'Neutral';
+
+    const matchedRec = validRecommendations.find(r => r.toLowerCase() === String(parsed.recommendation).toLowerCase());
+    parsed.recommendation = matchedRec || 'Hold';
+
     if (!Array.isArray(parsed.strengths)) { parsed.strengths = []; }
     if (!Array.isArray(parsed.risks)) { parsed.risks = []; }
     if (typeof parsed.summary !== 'string') { parsed.summary = ''; }
@@ -78,32 +97,36 @@ function parseStructuredOutput(rawText) {
 }
 
 async function analyzeStockWithAI(stockData) {
-    var client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const cacheKey = stockData.symbol.toUpperCase() + '_' + stockData.currentPrice;
+    const cached = aiAnalysisCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
 
-    var systemPrompt = buildSystemPrompt();
-    var userPrompt = buildUserPrompt(stockData);
+    const client = getGroqClient();
 
-    // LLM API call using Groq's chat completions with system + user message structure
-    var completion = await client.chat.completions.create({
-        model: 'openai/gpt-oss-20b',
+    const systemPrompt = buildSystemPrompt();
+    const userPrompt = buildUserPrompt(stockData);
+
+    const completion = await client.chat.completions.create({
+        model: DEFAULT_MODEL,
         messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ],
-        temperature: 0.2,      // Low temperature for deterministic, factual structured output
-        max_tokens: 512,
-        response_format: { type: 'json_object' }  // Enforce JSON-only response (structured output)
+        temperature: 0.2,
+        max_tokens: 1500,
+        response_format: { type: 'json_object' }
     });
 
-    var rawText = completion.choices[0].message.content;
+    const rawText = completion.choices[0].message.content;
+    const parsed = parseStructuredOutput(rawText);
 
-    // Parse and validate the structured JSON output
-    return parseStructuredOutput(rawText);
+    return aiAnalysisCache.set(cacheKey, parsed);
 }
 
 // ==================== FINANCE CHAT ====================
 
-// System prompt for the chat feature — defines role and structured JSON output schema
 function buildChatSystemPrompt() {
     return [
         'You are a helpful and knowledgeable AI finance assistant for a stock market application.',
@@ -121,35 +144,41 @@ function buildChatSystemPrompt() {
 }
 
 async function chatWithAI(question) {
-    var client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const cleanQuestion = question.trim().toLowerCase();
+    const cached = aiChatCache.get(cleanQuestion);
+    if (cached) {
+        return cached;
+    }
 
-    // Chat uses the lightest available model for speed
-    var completion = await client.chat.completions.create({
-        model: 'openai/gpt-oss-20b',
+    const client = getGroqClient();
+
+    const completion = await client.chat.completions.create({
+        model: DEFAULT_MODEL,
         messages: [
             { role: 'system', content: buildChatSystemPrompt() },
             { role: 'user', content: question }
         ],
         temperature: 0.4,
-        max_tokens: 300,
+        max_tokens: 1000,
         response_format: { type: 'json_object' }
     });
 
-    var rawText = completion.choices[0].message.content;
-    var cleaned = rawText.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    const rawText = completion.choices[0].message.content;
+    const cleaned = rawText.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
 
-    var parsed;
+    let parsed;
     try {
         parsed = JSON.parse(cleaned);
     } catch (e) {
-        // Fallback if model returns plain text instead of JSON
         parsed = { answer: rawText, disclaimer: '' };
     }
 
-    return {
+    const result = {
         answer: parsed.answer || rawText,
         disclaimer: parsed.disclaimer || ''
     };
+
+    return aiChatCache.set(cleanQuestion, result);
 }
 
 module.exports = { analyzeStockWithAI, chatWithAI };

@@ -3,6 +3,9 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
+
+// Load environment variables from server/.env, fallback to root .env
+dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config();
 
 const { validateEnvironment } = require('./config/validateEnv');
@@ -22,11 +25,14 @@ const indexHtmlPath = path.join(clientBuildPath, 'index.html');
 
 app.use(cors());
 app.use(express.json());
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/ai', aiRoutes);
 
+// Health check endpoint
 app.get('/health', function(req, res) {
     res.status(200).json({
         status: "ok",
@@ -35,6 +41,7 @@ app.get('/health', function(req, res) {
     });
 });
 
+// Production Client Static Serving
 if (process.env.NODE_ENV === 'production' && fs.existsSync(indexHtmlPath)) {
     app.use(express.static(clientBuildPath));
 
@@ -46,6 +53,17 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(indexHtmlPath)) {
         res.send("Welcome to the Stock Analyzer API");
     });
 }
+
+// Centralized error handling middleware
+app.use(function(err, req, res, next) {
+    console.error('Unhandled server error:', err);
+    const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+    res.status(statusCode).json({
+        message: process.env.NODE_ENV === 'production' 
+            ? 'An unexpected error occurred. Please try again.' 
+            : (err.message || 'Internal Server Error')
+    });
+});
 
 async function startServer() {
     await connectDb();

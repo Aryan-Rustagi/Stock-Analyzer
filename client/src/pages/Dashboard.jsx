@@ -2,31 +2,31 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { useAuth } from '../context/AuthContext';
 
-// Sample questions to help the user get started
-var SAMPLE_QUESTIONS = [
+const SAMPLE_QUESTIONS = [
     'What is a P/E ratio?',
     'How do I diversify a portfolio?',
     'What is dollar-cost averaging?'
 ];
 
 function Dashboard() {
-    var navigate = useNavigate();
+    const navigate = useNavigate();
+    const { token, logout } = useAuth();
 
     // Chat state
-    var [question, setQuestion] = useState('');
-    var [chatResponse, setChatResponse] = useState(null);
-    var [chatLoading, setChatLoading] = useState(false);
-    var [chatError, setChatError] = useState('');
+    const [question, setQuestion] = useState('');
+    const [chatResponse, setChatResponse] = useState(null);
+    const [chatLoading, setChatLoading] = useState(false);
+    const [chatError, setChatError] = useState('');
 
     function handleLogout() {
-        localStorage.removeItem('token');
+        logout();
         navigate('/');
-        window.location.reload();
     }
 
     async function askQuestion(q) {
-        var text = (q || question).trim();
+        const text = (q || question).trim();
         if (!text) return;
 
         setChatLoading(true);
@@ -34,8 +34,7 @@ function Dashboard() {
         setChatResponse(null);
 
         try {
-            var token = localStorage.getItem('token');
-            var res = await axios.post(
+            const res = await axios.post(
                 API_BASE_URL + '/api/ai/chat',
                 { question: text },
                 { headers: { Authorization: 'Bearer ' + token } }
@@ -43,9 +42,9 @@ function Dashboard() {
             setChatResponse(res.data);
         } catch (err) {
             setChatError(err.response?.data?.message || 'Chat failed. Please try again.');
+        } finally {
+            setChatLoading(false);
         }
-
-        setChatLoading(false);
     }
 
     function handleSubmit(event) {

@@ -64,13 +64,15 @@ An enterprise-grade, high-performance financial tracking dashboard built utilizi
 | **CORS** | Cross-Origin Middleware | Controls client access domains; restricts and regulates traffic from authorized local hosts. |
 | **BcryptJS** | Cryptographic Hashing | Secures passwords using salted one-way hashing algorithms prior to database storage. |
 | **Recharts** | Interactive Visualization | Renders dynamic SVG charts representing historical stock values, including customizable tooltip cards. |
-| **Groq Cloud API** | AI Inference Engine | Powers real-time financial Q&A and structured stock sentiment analysis using Llama 3.1. |
-| **Finnhub API** | Primary Data Provider | Serves stock quotes (`/quote`), search suggestions (`/search`), and historical candle data (`/stock/candle`). |
+| **Groq Cloud API** | AI Inference Engine | Powers real-time financial Q&A and structured stock sentiment analysis. |
+| **IndianAPI.in** | Indian Live Quotes | Serves real-time live quotes (NSE & BSE prices), company profile, day high/low, and 52-week ranges. |
+| **TejHQ API** | Indian Historical Data | Serves back-adjusted 30-day chronological OHLCV candle datasets for NSE & BSE stocks. |
+| **Finnhub API** | Global Primary Provider | Serves US/global stock quotes (`/quote`), search suggestions (`/search`), and historical candle data. |
 | **Alpha Vantage API** | Secondary Fallback | Provides `GLOBAL_QUOTE`, `SYMBOL_SEARCH`, and `TIME_SERIES_DAILY` endpoints when Finnhub is rate-limited. |
 | **Twelve Data API** | Tertiary Fallback | Supplies `/quote`, `/symbol_search`, and `/time_series` endpoints as final fallback provider. |
 | **Docker** | Containerization | Packages the client, server, and MongoDB into isolated, portable containers orchestrated via Docker Compose. |
 
-> **Fallback Strategy:** Each data function (quotes, search, historical) tries Finnhub first. On failure (rate limit, error, or invalid response), it automatically falls through to Alpha Vantage, then Twelve Data — ensuring uninterrupted service.
+> **Smart Market Fallback:** Indian stock searches (e.g. `RELIANCE`, `TCS`, `INFY`) automatically route directly to IndianAPI.in and TejHQ. US/Global stock searches (e.g. `AAPL`, `MSFT`, `TSLA`) route directly to Finnhub, Alpha Vantage, and Twelve Data — minimizing latency and maximizing provider uptime.
 
 ---
 
@@ -122,6 +124,8 @@ The fastest way to run the full stack locally.
    FINNHUB_API_KEY=your_finnhub_api_token
    ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
    TWELVE_DATA_API_KEY=your_twelve_data_api_key
+   TEJ_API_KEY=your_tejhq_api_key
+   INDIAN_API_KEY=your_indianapi_api_key
    ```
 3. Build and start all services:
    ```bash
@@ -156,6 +160,8 @@ docker compose down
    FINNHUB_API_KEY=your_finnhub_api_token
    ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
    TWELVE_DATA_API_KEY=your_twelve_data_api_key
+   TEJ_API_KEY=your_tejhq_api_key
+   INDIAN_API_KEY=your_indianapi_api_key
    ```
 4. Start the backend development server:
    ```bash

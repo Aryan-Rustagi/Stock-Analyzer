@@ -20,7 +20,9 @@ function validateEnvironment() {
         { name: 'GROQ_API_KEY', critical: false, description: 'Groq LLM API key for AI stock analysis & chat' },
         { name: 'FINNHUB_API_KEY', critical: false, description: 'Primary stock data provider' },
         { name: 'ALPHA_VANTAGE_API_KEY', critical: false, description: 'Secondary fallback stock data provider' },
-        { name: 'TWELVE_DATA_API_KEY', critical: false, description: 'Tertiary fallback stock data provider' }
+        { name: 'TWELVE_DATA_API_KEY', critical: false, description: 'Tertiary fallback stock data provider' },
+        { name: 'TEJ_API_KEY', critical: false, description: 'TejHQ Indian stock historical/OHLCV data' },
+        { name: 'INDIAN_API_KEY', critical: false, description: 'IndianAPI.in Indian stock live quote provider' }
     ];
 
     console.log('\n================ ENVIRONMENT & SECRETS CHECK ================');

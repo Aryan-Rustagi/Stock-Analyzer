@@ -2,14 +2,17 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { useAuth } from '../context/AuthContext';
 
 function SignUp() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   function handleNameChange(event) {
     setName(event.target.value);
@@ -30,16 +33,20 @@ function SignUp() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (name === '') {
+    if (name.trim() === '') {
       setError('Please enter your name.');
       return;
     }
-    if (email === '') {
+    if (email.trim() === '') {
       setError('Please enter your email.');
       return;
     }
     if (password === '') {
       setError('Please enter a password.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
       return;
     }
     if (confirmPassword === '') {
@@ -52,19 +59,21 @@ function SignUp() {
     }
 
     setError('');
+    setLoading(true);
 
     try {
       const response = await axios.post(API_BASE_URL + '/api/auth/register', {
-        name: name,
-        email: email,
+        name: name.trim(),
+        email: email.trim(),
         password: password
       });
 
-      localStorage.setItem('token', response.data.token);
+      login(response.data.token);
       navigate('/dashboard');
-      window.location.reload();
     } catch(err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -84,6 +93,7 @@ function SignUp() {
               placeholder="Your full name"
               value={name}
               onChange={handleNameChange}
+              disabled={loading}
             />
           </div>
 
@@ -96,6 +106,7 @@ function SignUp() {
               placeholder="you@example.com"
               value={email}
               onChange={handleEmailChange}
+              disabled={loading}
             />
           </div>
 
@@ -105,9 +116,10 @@ function SignUp() {
               id="signup-password"
               className="input"
               type="password"
-              placeholder="Create a password"
+              placeholder="Create a password (min 6 characters)"
               value={password}
               onChange={handlePasswordChange}
+              disabled={loading}
             />
           </div>
 
@@ -120,10 +132,18 @@ function SignUp() {
               placeholder="Repeat your password"
               value={confirmPassword}
               onChange={handleConfirmPasswordChange}
+              disabled={loading}
             />
           </div>
 
-          <button type="submit" className="btn-primary" style={{width: "100%", marginTop: "0.5rem"}}>Create account</button>
+          <button 
+            type="submit" 
+            className="btn-primary" 
+            style={{width: "100%", marginTop: "0.5rem"}}
+            disabled={loading}
+          >
+            {loading ? 'Creating account...' : 'Create account'}
+          </button>
         </form>
 
         {error && <p className="auth-error">{error}</p>}
