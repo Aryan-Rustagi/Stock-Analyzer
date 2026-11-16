@@ -3,8 +3,8 @@ import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer
+    AreaChart, Area, XAxis, YAxis, CartesianGrid,
+    Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
@@ -150,14 +150,66 @@ function MarketBadge({ name, isOpen }) {
 // ---------------------------------------------------------------------------
 // Chart section
 // ---------------------------------------------------------------------------
-function ChartDot({ cx, cy }) {
+function CustomTooltip({ active, payload, label, currency, firstClose }) {
+    if (!active || !payload || !payload.length) return null;
+    const close = payload[0].value;
+    const sym = currency === 'INR' ? '₹' : '$';
+    const dayChange = firstClose ? close - firstClose : 0;
+    const dayChangePct = firstClose ? ((dayChange / firstClose) * 100) : 0;
+    const isUp = dayChange >= 0;
+
+    const d = new Date(label);
+    const dateStr = isNaN(d) ? label : d.toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric'
+    });
+
     return (
-        <circle cx={cx} cy={cy} r={4} fill="#fafafa" stroke="#0A0A0A" strokeWidth={2} />
+        <div style={{
+            background: '#111111',
+            border: '1px solid #2a2a2a',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+            minWidth: '160px',
+        }}>
+            <div style={{ fontSize: '0.7rem', color: '#6b6b6b', marginBottom: '6px', letterSpacing: '0.04em' }}>
+                {dateStr}
+            </div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fafafa', marginBottom: '4px' }}>
+                {sym}{close.toLocaleString(currency === 'INR' ? 'en-IN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: isUp ? '#22c55e' : '#ef4444', fontWeight: 500 }}>
+                {isUp ? '▲ +' : '▼ '}{dayChange.toFixed(2)} ({isUp ? '+' : ''}{dayChangePct.toFixed(2)}%)
+            </div>
+            <div style={{ fontSize: '0.65rem', color: '#555', marginTop: '4px' }}>
+                vs opening day
+            </div>
+        </div>
     );
 }
 
-function ChartSection({ historyData, currency }) {
+function ChartSection({ historyData, currency, stockData }) {
     const chartKey = historyData ? historyData.length + (historyData[0]?.date || '') : 0;
+
+    const firstClose = historyData && historyData.length > 0 ? historyData[0].close : 0;
+    const lastClose = historyData && historyData.length > 0 ? historyData[historyData.length - 1].close : 0;
+    const isTrendUp = lastClose >= firstClose;
+    const trendColor = isTrendUp ? '#22c55e' : '#ef4444';
+
+    // Compute 30-day stats
+    const stats = useMemo(function () {
+        if (!historyData || historyData.length === 0) return null;
+        const closes = historyData.map(function (d) { return d.close; });
+        const high = Math.max.apply(null, closes);
+        const low = Math.min.apply(null, closes);
+        const avg = closes.reduce(function (a, b) { return a + b; }, 0) / closes.length;
+        const change = lastClose - firstClose;
+        const changePct = firstClose ? ((change / firstClose) * 100) : 0;
+        return { high: high, low: low, avg: avg, change: change, changePct: changePct };
+    }, [historyData, firstClose, lastClose]);
+
+    const sym = currency === 'INR' ? '₹' : '$';
+    const locale = currency === 'INR' ? 'en-IN' : 'en-US';
 
     function formatDate(dateStr) {
         if (!dateStr) return dateStr;
@@ -173,30 +225,96 @@ function ChartSection({ historyData, currency }) {
         return '$' + value.toFixed(0);
     }
 
+    const gradientId = 'chartGradient-' + chartKey;
+
     return (
         <motion.div
             className="card chart-section"
             style={{ marginTop: '1.5rem' }}
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-            <h3>30-Day Price History</h3>
-            <div style={{ width: '100%', height: 320 }}>
+            {/* Chart Header */}
+            <div className="chart-header">
+                <div>
+                    <h3 style={{ margin: 0 }}>30-Day Price History</h3>
+                    {stockData && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {stockData.symbol} · {stockData.exchange || 'Market'}
+                        </span>
+                    )}
+                </div>
+                {stats && (
+                    <div className="chart-trend-badge" style={{
+                        color: isTrendUp ? '#22c55e' : '#ef4444',
+                        background: isTrendUp ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                        border: '1px solid',
+                        borderColor: isTrendUp ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)',
+                    }}>
+                        {isTrendUp ? '▲ +' : '▼ '}{stats.changePct.toFixed(2)}% (30d)
+                    </div>
+                )}
+            </div>
+
+            {/* 30-Day Stat Strip */}
+            {stats && (
+                <div className="chart-stats-strip">
+                    <div className="chart-stat-item">
+                        <span className="chart-stat-label">30D High</span>
+                        <span className="chart-stat-value" style={{ color: '#22c55e' }}>
+                            {sym}{stats.high.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                    </div>
+                    <div className="chart-stat-item">
+                        <span className="chart-stat-label">30D Low</span>
+                        <span className="chart-stat-value" style={{ color: '#ef4444' }}>
+                            {sym}{stats.low.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                    </div>
+                    <div className="chart-stat-item">
+                        <span className="chart-stat-label">Average</span>
+                        <span className="chart-stat-value">
+                            {sym}{stats.avg.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                    </div>
+                    <div className="chart-stat-item">
+                        <span className="chart-stat-label">30D Change</span>
+                        <span className="chart-stat-value" style={{ color: isTrendUp ? '#22c55e' : '#ef4444' }}>
+                            {isTrendUp ? '+' : ''}{sym}{stats.change.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Chart */}
+            <div style={{ width: '100%', height: 340 }}>
                 <ResponsiveContainer>
-                    <LineChart key={chartKey} data={historyData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                    <AreaChart key={chartKey} data={historyData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={trendColor} stopOpacity={0.25} />
+                                <stop offset="50%" stopColor={trendColor} stopOpacity={0.08} />
+                                <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#1e1e1e"
+                            vertical={false}
+                        />
                         <XAxis
                             dataKey="date"
-                            stroke="#404040"
-                            tick={{ fill: '#8A8A8A', fontSize: 11 }}
-                            tickMargin={8}
+                            stroke="transparent"
+                            tick={{ fill: '#555', fontSize: 11 }}
+                            tickMargin={10}
                             tickFormatter={formatDate}
                             tickLine={false}
+                            interval="preserveStartEnd"
                         />
                         <YAxis
-                            stroke="#404040"
-                            tick={{ fill: '#8A8A8A', fontSize: 11 }}
+                            stroke="transparent"
+                            tick={{ fill: '#555', fontSize: 11 }}
                             tickMargin={8}
                             domain={['auto', 'auto']}
                             tickFormatter={formatTick}
@@ -205,36 +323,45 @@ function ChartSection({ historyData, currency }) {
                             axisLine={false}
                         />
                         <Tooltip
-                            contentStyle={{
-                                backgroundColor: '#141414',
-                                border: '1px solid #2a2a2a',
-                                borderRadius: '6px',
-                                color: '#fafafa',
-                                fontSize: '13px',
-                                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                                padding: '8px 12px',
+                            content={<CustomTooltip currency={currency} firstClose={firstClose} />}
+                            cursor={{
+                                stroke: '#333',
+                                strokeWidth: 1,
+                                strokeDasharray: '4 4',
                             }}
-                            itemStyle={{ color: '#fafafa' }}
-                            labelStyle={{ color: '#8A8A8A', marginBottom: '2px' }}
-                            labelFormatter={formatDate}
-                            formatter={function (value) {
-                                const sym = currency === 'INR' ? '₹' : '$';
-                                return [sym + value.toFixed(2), 'Close'];
-                            }}
-                            cursor={{ stroke: '#404040', strokeWidth: 1, strokeDasharray: '4 4' }}
                         />
-                        <Line
+                        <ReferenceLine
+                            y={firstClose}
+                            stroke="#333"
+                            strokeDasharray="6 4"
+                            strokeWidth={1}
+                            label={{
+                                value: 'Open',
+                                position: 'insideTopRight',
+                                fill: '#555',
+                                fontSize: 10,
+                            }}
+                        />
+                        <Area
                             type="monotone"
                             dataKey="close"
-                            stroke="#fafafa"
-                            strokeWidth={1.75}
+                            stroke={trendColor}
+                            strokeWidth={2}
+                            fill={'url(#' + gradientId + ')'}
                             dot={false}
-                            activeDot={<ChartDot />}
+                            activeDot={{
+                                r: 5,
+                                fill: trendColor,
+                                stroke: '#0A0A0A',
+                                strokeWidth: 2.5,
+                                style: { filter: 'drop-shadow(0 0 4px ' + trendColor + '60)' },
+                            }}
                             isAnimationActive={true}
-                            animationDuration={900}
-                            animationEasing="ease-out"
+                            animationBegin={100}
+                            animationDuration={1200}
+                            animationEasing="ease-in-out"
                         />
-                    </LineChart>
+                    </AreaChart>
                 </ResponsiveContainer>
             </div>
         </motion.div>
@@ -819,7 +946,7 @@ function SearchStock() {
                                 {/* Recharts Interactive 30-Day Chart */}
                                 <AnimatePresence>
                                     {showChart && historyData && (
-                                        <ChartSection historyData={historyData} currency={stockData.currency} />
+                                        <ChartSection historyData={historyData} currency={stockData.currency} stockData={stockData} />
                                     )}
                                 </AnimatePresence>
 
