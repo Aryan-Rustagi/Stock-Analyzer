@@ -81,7 +81,7 @@ app.use(function(err, req, res, next) {
 
 async function startServer() {
     await connectDb();
-    app.listen(PORT, function() {
+    app.listen(PORT, '0.0.0.0', function() {
         console.log(`🚀 Server is running on http://localhost:${PORT}`);
     });
 }

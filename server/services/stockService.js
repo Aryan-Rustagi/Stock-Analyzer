@@ -88,6 +88,9 @@ async function searchStockIndianAPI(symbol) {
     const dayHigh = parseFloat(reusable.high) || parseFloat(data.yearHigh) || currentPrice;
     const dayLow = parseFloat(reusable.low) || parseFloat(data.yearLow) || currentPrice;
 
+    const change = prevClose ? parseFloat((currentPrice - prevClose).toFixed(2)) : 0;
+    const changePercent = prevClose ? parseFloat(((change / prevClose) * 100).toFixed(2)) : 0;
+
     return {
         symbol: symbol.toUpperCase(),
         companyName: data.companyName || symbol.toUpperCase(),
@@ -96,6 +99,8 @@ async function searchStockIndianAPI(symbol) {
         exchange: nsePrice ? 'NSE' : 'BSE',
         marketState: 'ACTIVE',
         previousClose: prevClose,
+        change: change,
+        changePercent: changePercent,
         open: openPrice,
         high: dayHigh,
         low: dayLow,
@@ -120,6 +125,9 @@ async function searchStockTejHQ(symbol) {
 
     const latest = data.data[data.data.length - 1];
     const prev = data.data.length > 1 ? data.data[data.data.length - 2] : latest;
+    const prevClose = latest.prev_close || prev.close;
+    const change = prevClose ? parseFloat((latest.close - prevClose).toFixed(2)) : 0;
+    const changePercent = prevClose ? parseFloat(((change / prevClose) * 100).toFixed(2)) : 0;
 
     return {
         symbol: symbol.toUpperCase(),
@@ -128,7 +136,9 @@ async function searchStockTejHQ(symbol) {
         currency: 'INR',
         exchange: 'NSE',
         marketState: 'ACTIVE',
-        previousClose: latest.prev_close || prev.close,
+        previousClose: prevClose,
+        change: change,
+        changePercent: changePercent,
         open: latest.open,
         high: latest.high,
         low: latest.low,
@@ -162,6 +172,10 @@ async function searchStockFinnhub(symbol) {
         } catch (_) {}
     }
 
+    const prevClose = data.pc;
+    const change = typeof data.d === 'number' ? parseFloat(data.d.toFixed(2)) : (prevClose ? parseFloat((data.c - prevClose).toFixed(2)) : 0);
+    const changePercent = typeof data.dp === 'number' ? parseFloat(data.dp.toFixed(2)) : (prevClose ? parseFloat(((change / prevClose) * 100).toFixed(2)) : 0);
+
     return {
         symbol: symbol.toUpperCase(),
         companyName: companyName,
@@ -169,7 +183,9 @@ async function searchStockFinnhub(symbol) {
         currency: 'USD',
         exchange: 'Unknown Exchange',
         marketState: 'ACTIVE',
-        previousClose: data.pc,
+        previousClose: prevClose,
+        change: change,
+        changePercent: changePercent,
         open: data.o,
         high: data.h,
         low: data.l,
