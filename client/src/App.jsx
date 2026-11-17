@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-do
 import { AnimatePresence, motion } from 'framer-motion'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import AICopilot from './components/AICopilot'
 import './App.css'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -112,6 +113,7 @@ function App() {
               </Routes>
             </Suspense>
           </main>
+          <AICopilot />
           <footer className="footer">
             <p>&copy; 2026 Stock Analyzer. Made by Aryan Rustagi.</p>
           </footer>
